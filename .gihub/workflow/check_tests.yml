@@ -32,3 +32,4 @@ jobs:
     - name: test
       run: |
         cd build
+        ctest --build-config Release --output-on-failure --output-junit test_results.xml
