@@ -11,25 +11,51 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
     - name: fetch dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y software-properties-common lsb-release wget gnupg
+        
+        # 1. Устанавливаем GCC 13
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
         sudo apt-get update
-        sudo apt-get install -y gcc-13 g++-13 libgtest-dev clang-format clang-tidy
+        sudo apt-get install -y g++-13 gcc-13 libgtest-dev
+
+        # 2. ВАЖНО: Делаем GCC 13 версией по умолчанию.
+        # Clang использует эту настройку, чтобы найти правильные пути к заголовкам C++23.
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13
+
+        # 3. Устанавливаем Clang 17
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 17
+        sudo apt-get install -y clang-tidy-17 clang-format-17
+        
+        # 4. Создаем симлинки для Clang
+        sudo ln -sf /usr/bin/clang-17 /usr/bin/clang
+        sudo ln -sf /usr/bin/clang++-17 /usr/bin/clang++
+        sudo ln -sf /usr/bin/clang-format-17 /usr/bin/clang-format
+        sudo ln -sf /usr/bin/clang-tidy-17 /usr/bin/clang-tidy
+
     - name: cmake
       run: |
         mkdir build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_C_COMPILER=gcc-13 \
-              -DCMAKE_CXX_COMPILER=g++-13 ..
+        # Собираем с помощью Clang.
+        # Теперь, благодаря update-alternatives, он найдет заголовки от GCC 13.
+        cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release ..
+        
     - name: make
       run: |
         cd build
         make
+
     - name: clang format and tidy
       run: |
+        # Теперь compile_commands.json правильный, и tidy найдет std::expected
         ./scripts/format.sh
+
     - name: test
       run: |
         cd build
