@@ -14,25 +14,26 @@ jobs:
     - name: fetch dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y lsb-release wget software-properties-common gnupg libgtest-dev
-
+        sudo apt-get install -y software-properties-common lsb-release wget gnupg
+        
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
         sudo apt-get update
         sudo apt-get install -y g++-13 gcc-13 libgtest-dev
-        
+
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         sudo ./llvm.sh 17
+        sudo apt-get install -y clang-17 clang-tidy-17 clang-format-17
         
-        sudo apt-get install -y clang-format-17 clang-tidy-17
-        
+        sudo ln -sf /usr/bin/clang-17 /usr/bin/clang
+        sudo ln -sf /usr/bin/clang++-17 /usr/bin/clang++
         sudo ln -sf /usr/bin/clang-format-17 /usr/bin/clang-format
         sudo ln -sf /usr/bin/clang-tidy-17 /usr/bin/clang-tidy
     - name: cmake
       run: |
         mkdir build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-13 ..
+        cmake -DCMAKE_C_COMPILER=clang-17 -DCMAKE_CXX_COMPILER=clang++-17 -DCMAKE_BUILD_TYPE=Release ..
     - name: make
       run: |
         cd build
