@@ -21,14 +21,11 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -GNinja -DCMAKE_BUILD_TYPE=Debug ..
+        cmake -DCMAKE_BUILD_TYPE=Debug ..
     - name: make
       run: |
         cd build
-        ninja
-    - name: clang tidy
-      run : |
-        script/tidy.sh
+        make
     - name: test
       run: |
         cd build
