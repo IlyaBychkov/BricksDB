@@ -13,10 +13,13 @@ jobs:
     - uses: actions/checkout@v4
     - name: fetch dependencies
       run: |
-        sudo apt-get install libgtest-dev clang-format clang-tidy
+        sudo apt-get install clang-format clang-tidy
     - name: clang format
       run : |
-        script/format.sh
+        find src/ -type f \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.cc' \) -print0 | xargs -0 clang-format --dry-run -Werror
+    - name: clang tidy
+      run: |
+        find src/ -type f \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.cc' \) -print0 | xargs -0 clang-tidy -p build
     - name: cmake
       run: |
         mkdir build
@@ -29,4 +32,3 @@ jobs:
     - name: test
       run: |
         cd build
-        ctest --output-on-failure --output-junit test_results.xml
