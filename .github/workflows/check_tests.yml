@@ -15,6 +15,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install libgtest-dev clang-format clang-tidy libc++-dev libc++abi-dev
+    - name: clang format
+      run : |
+        script/format.sh
     - name: cmake
       run: |
         mkdir build
@@ -24,9 +27,9 @@ jobs:
       run: |
         cd build
         make
-    - name: clang format and tidy
-      run: |
-        ./scripts/format.sh
+    - name: clang tidy
+      run : |
+        script/tidy.sh
     - name: test
       run: |
         cd build
