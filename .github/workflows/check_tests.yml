@@ -15,14 +15,14 @@ jobs:
       run: |
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
         sudo apt-get update
-        sudo apt-get install -y gcc-15 g++-15 libgtest-dev clang-format clang-tidy
+        sudo apt-get install -y gcc-13 g++-13 libgtest-dev clang-format clang-tidy
     - name: cmake
       run: |
         mkdir build
         cd build
         cmake -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_C_COMPILER=gcc-15 \
-              -DCMAKE_CXX_COMPILER=g++-15 ..
+              -DCMAKE_C_COMPILER=gcc-13 \
+              -DCMAKE_CXX_COMPILER=g++-13 ..
     - name: make
       run: |
         cd build
