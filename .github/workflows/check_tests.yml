@@ -13,8 +13,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: fetch dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install libgtest-dev clang-format clang-tidy libc++-dev libc++abi-dev
+        sudo apt-get install clang-format clang-tidy
     - name: clang format
       run : |
         script/format.sh
@@ -22,11 +21,11 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ ..
+        cmake -GNinja -DCMAKE_BUILD_TYPE=Debug ..
     - name: make
       run: |
         cd build
-        make
+        ninja
     - name: clang tidy
       run : |
         script/tidy.sh
