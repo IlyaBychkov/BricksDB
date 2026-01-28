@@ -13,7 +13,17 @@ jobs:
     - uses: actions/checkout@v4
     - name: fetch dependencies
       run: |
-        sudo apt-get install libgtest-dev clang-format clang-tidy
+        sudo apt-get update
+        sudo apt-get install -y lsb-release wget software-properties-common gnupg libgtest-dev
+        
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 17
+        
+        sudo apt-get install -y clang-format-17 clang-tidy-17
+        
+        sudo ln -sf /usr/bin/clang-format-17 /usr/bin/clang-format
+        sudo ln -sf /usr/bin/clang-tidy-17 /usr/bin/clang-tidy
     - name: cmake
       run: |
         mkdir build
