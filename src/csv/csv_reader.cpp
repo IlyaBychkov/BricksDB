@@ -14,6 +14,10 @@ bool CSVReader::Open() {
     return fin_.is_open();
 }
 
+bool CSVReader::IsCrashed() {
+    return crashed_;
+}
+
 bool CSVReader::HasNext() {
     return fin_.is_open() && !crashed_ && !fin_.eof();
 }

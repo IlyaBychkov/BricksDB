@@ -18,11 +18,11 @@ public:
 
     bool Open();
 
-    bool Crashed();
+    bool IsCrashed();
 
     bool Flush();
 
-    bool WriteStr(const std::vector<std::string>& fields, bool need_flush);
+    bool WriteRow(const std::vector<std::string>& fields, bool need_flush = false);
 
 private:
     std::string filename_;

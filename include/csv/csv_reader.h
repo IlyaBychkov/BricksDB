@@ -21,6 +21,8 @@ public:
 
     bool HasNext();
 
+    bool IsCrashed();
+
     std::expected<std::vector<std::string>, std::string> NextStr();
 
 private:
