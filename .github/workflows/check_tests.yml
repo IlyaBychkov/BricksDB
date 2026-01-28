@@ -8,38 +8,25 @@ on:
 
 jobs:
   build-solutions-ubuntu:
-    # 1. Используем свежую Ubuntu 24.04.
-    # В ней системные библиотеки уже поддерживают C++23 (std::expected).
-    runs-on: ubuntu-24.04
-    
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-
     - name: fetch dependencies
       run: |
         sudo apt-get update
-        # На Ubuntu 24.04 уже свежий GCC и свежий Clang (обычно 18-й версии) в репозиториях.
-        # Нам не нужны сторонние PPA и скрипты llvm.sh.
-        sudo apt-get install -y clang clang-format clang-tidy libgtest-dev cmake
-
+        sudo apt-get install libgtest-dev clang-format clang-tidy libc++-dev libc++abi-dev
     - name: cmake
       run: |
         mkdir build
         cd build
-        # Собираем Клангом. Так как это Ubuntu 24.04, Clang автоматически
-        # подхватит свежую стандартную библиотеку системы.
-        cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release ..
-        
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++ ..
     - name: make
       run: |
         cd build
         make
-
     - name: clang format and tidy
       run: |
-        # Запускаем ваш скрипт. В системе уже стоят актуальные версии утилит.
         ./scripts/format.sh
-
     - name: test
       run: |
         cd build
