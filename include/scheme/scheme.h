@@ -9,7 +9,7 @@ struct SchemeElement {
 public:
     SchemeElement(const std::string& name, Type type);
 
-    std::string GetName() const;
+    const std::string& GetName() const;
     Type GetType() const;
 
     std::string ToString() const;
@@ -28,7 +28,11 @@ public:
     bool WriteToFile(const std::string& filename) const;
 
     size_t GetSize() const;
-    SchemeElement GetElement(size_t ind) const;
+
+    const SchemeElement& GetElement(size_t ind) const;
+    const std::string& GetName(size_t ind) const;
+    Type GetType(size_t ind) const;
+
     void AddElement(SchemeElement elem);
 
 private:
