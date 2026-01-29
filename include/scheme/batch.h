@@ -10,9 +10,16 @@ public:
     Batch(const std::vector<Column>& data, const Scheme& scheme);
     Batch(std::vector<Column>&& data, const Scheme& scheme);
 
+    Batch(const Batch&) = default;
+    Batch& operator=(const Batch&) = default;
+
+    Batch(Batch&&) = default;
+    Batch& operator=(Batch&&) = default;
+
     bool Validate() const;
 
-    size_t GetSize() const;
+    size_t ColumnsCnt() const;
+    size_t RowsCnt() const;
 
     const Scheme& GetScheme() const;
 

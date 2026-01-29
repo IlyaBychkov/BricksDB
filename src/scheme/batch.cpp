@@ -28,8 +28,15 @@ bool Batch::Validate() const {
     return true;
 }
 
-size_t Batch::GetSize() const {
+size_t Batch::ColumnsCnt() const {
     return data_.size();
+}
+
+size_t Batch::RowsCnt() const {
+    if (data_.empty()) {
+        return 0;
+    }
+    return data_[0].GetSize();
 }
 
 const Scheme& Batch::GetScheme() const {
