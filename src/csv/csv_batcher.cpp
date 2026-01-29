@@ -1,12 +1,13 @@
 #include "csv/csv_batcher.h"
 
-std::expected<CSVBatcher, std::string> CreateCSVBatcher(const std::string& csv_file,
+std::expected<CSVBatcher, std::string> CreateCSVBatcher(const std::string& csv_filename,
                                                         const std::string& scheme_file,
                                                         int64_t batch_max_size) {
-    CSVReader reader(csv_file);
-    if (!reader.Open()) {
-        return std::unexpected("Failed to open CSV file: " + csv_file);
+    auto tmp = CreateCSVReader(csv_filename);
+    if (!tmp.has_value()) {
+        return std::unexpected("Failed to open CSV file: " + csv_filename);
     }
+    CSVReader reader = std::move(tmp.value());
     Scheme scheme;
     if (!scheme.ConstructFromFile(scheme_file)) {
         return std::unexpected("Failed to open scheme file: " + scheme_file);
@@ -62,4 +63,8 @@ std::expected<Batch, std::string> CSVBatcher::NextBatch() {
     }
 
     return Batch(std::move(columns), scheme_);
+}
+
+const Scheme& CSVBatcher::GetScheme() {
+    return scheme_;
 }

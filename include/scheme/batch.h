@@ -28,6 +28,8 @@ public:
 
     Column& GetColumn(size_t ind);
     const Column& GetColumn(size_t ind) const;
+    std::vector<Column>& GetAllColumns();
+    const std::vector<Column>& GetAllColumns() const;
 
     void AddColumn(const Column& columnn, const SchemeElement& se);
 

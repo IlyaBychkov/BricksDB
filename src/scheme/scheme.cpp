@@ -22,10 +22,12 @@ Scheme::Scheme(const std::vector<SchemeElement>& values) : values_(values) {
 }
 
 bool Scheme::ConstructFromFile(const std::string& filename) {
-    CSVReader reader(filename);
-    if (!reader.Open()) {
+    auto res = CreateCSVReader(filename);
+    if (!res.has_value()) {
         return false;
     }
+    CSVReader reader = std::move(res.value());
+
     while (reader.HasNext()) {
         auto tmp = reader.NextStr();
         if (!tmp.has_value()) {
@@ -67,6 +69,10 @@ size_t Scheme::GetSize() const {
 
 const SchemeElement& Scheme::GetElement(size_t ind) const {
     return values_.at(ind);
+}
+
+const std::vector<SchemeElement>& Scheme::GetAllElements() const {
+    return values_;
 }
 
 const std::string& Scheme::GetName(size_t ind) const {

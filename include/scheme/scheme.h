@@ -30,6 +30,7 @@ public:
     size_t GetSize() const;
 
     const SchemeElement& GetElement(size_t ind) const;
+    const std::vector<SchemeElement>& GetAllElements() const;
     const std::string& GetName(size_t ind) const;
     Type GetType(size_t ind) const;
 

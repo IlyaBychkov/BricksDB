@@ -33,8 +33,9 @@ protected:
 
 TEST_F(CSVBatcherTest, CreateValidBatcher) {
     {
-        CSVReader r(test_scheme_file.string());
-        ASSERT_TRUE(r.Open());
+        auto rres = CreateCSVReader(test_scheme_file.string());
+        ASSERT_TRUE(rres.has_value());
+        CSVReader r = std::move(rres.value());
     }
 
     auto res = CreateCSVBatcher(test_csv_file.string(), test_scheme_file.string());

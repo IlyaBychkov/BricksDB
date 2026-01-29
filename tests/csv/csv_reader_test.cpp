@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <fstream>
 
 class CSVReaderTest : public ::testing::Test {
 protected:
@@ -37,29 +38,26 @@ continued here")";
 };
 
 TEST_F(CSVReaderTest, OpenValidFile) {
-    CSVReader reader(test_csv_str);
-    EXPECT_TRUE(reader.Open());
+    auto tmp = CreateCSVReader(test_csv_str);
+    ASSERT_TRUE(tmp.has_value());
 }
 
 TEST_F(CSVReaderTest, OpenInvalidFile) {
-    CSVReader reader("aboba.csv");
-    EXPECT_FALSE(reader.Open());
+    auto tmp = CreateCSVReader("aboba.csv");
+    EXPECT_FALSE(tmp.has_value());
 }
 
-TEST_F(CSVReaderTest, HasNextBeforeOpen) {
-    CSVReader reader(test_csv_str);
-    EXPECT_FALSE(reader.HasNext());
-}
-
-TEST_F(CSVReaderTest, HasNextAfterOpen) {
-    CSVReader reader(test_csv_str);
-    ASSERT_TRUE(reader.Open());
+TEST_F(CSVReaderTest, HasNextAfterCreate) {
+    auto tmp = CreateCSVReader(test_csv_str);
+    ASSERT_TRUE(tmp.has_value());
+    CSVReader reader = std::move(tmp.value());
     EXPECT_TRUE(reader.HasNext());
 }
 
 TEST_F(CSVReaderTest, ReadHeader) {
-    CSVReader reader(test_csv_str);
-    ASSERT_TRUE(reader.Open());
+    auto tmp = CreateCSVReader(test_csv_str);
+    ASSERT_TRUE(tmp.has_value());
+    CSVReader reader = std::move(tmp.value());
 
     auto result = reader.NextStr();
     ASSERT_TRUE(result.has_value());
@@ -72,8 +70,9 @@ TEST_F(CSVReaderTest, ReadHeader) {
 }
 
 TEST_F(CSVReaderTest, ReadQuotedField) {
-    CSVReader reader(test_csv_str);
-    ASSERT_TRUE(reader.Open());
+    auto tmp = CreateCSVReader(test_csv_str);
+    ASSERT_TRUE(tmp.has_value());
+    CSVReader reader = std::move(tmp.value());
     SkipRows(reader, 1);
 
     auto result = reader.NextStr();
@@ -86,8 +85,9 @@ TEST_F(CSVReaderTest, ReadQuotedField) {
 }
 
 TEST_F(CSVReaderTest, ReadFieldWithCommaAndTrailingSpace) {
-    CSVReader reader(test_csv_str);
-    ASSERT_TRUE(reader.Open());
+    auto tmp = CreateCSVReader(test_csv_str);
+    ASSERT_TRUE(tmp.has_value());
+    CSVReader reader = std::move(tmp.value());
     SkipRows(reader, 2);
 
     auto result = reader.NextStr();
@@ -99,8 +99,9 @@ TEST_F(CSVReaderTest, ReadFieldWithCommaAndTrailingSpace) {
 }
 
 TEST_F(CSVReaderTest, ReadMultilineField) {
-    CSVReader reader(test_csv_str);
-    ASSERT_TRUE(reader.Open());
+    auto tmp = CreateCSVReader(test_csv_str);
+    ASSERT_TRUE(tmp.has_value());
+    CSVReader reader = std::move(tmp.value());
     SkipRows(reader, 3);
 
     auto result = reader.NextStr();
@@ -112,8 +113,9 @@ TEST_F(CSVReaderTest, ReadMultilineField) {
 }
 
 TEST_F(CSVReaderTest, ReadEscapedQuotes) {
-    CSVReader reader(test_csv_str);
-    ASSERT_TRUE(reader.Open());
+    auto tmp = CreateCSVReader(test_csv_str);
+    ASSERT_TRUE(tmp.has_value());
+    CSVReader reader = std::move(tmp.value());
     SkipRows(reader, 4);
 
     auto result = reader.NextStr();
@@ -125,8 +127,9 @@ TEST_F(CSVReaderTest, ReadEscapedQuotes) {
 }
 
 TEST_F(CSVReaderTest, ReadEmptyField) {
-    CSVReader reader(test_csv_str);
-    ASSERT_TRUE(reader.Open());
+    auto tmp = CreateCSVReader(test_csv_str);
+    ASSERT_TRUE(tmp.has_value());
+    CSVReader reader = std::move(tmp.value());
     SkipRows(reader, 5);
 
     auto result = reader.NextStr();
@@ -139,8 +142,9 @@ TEST_F(CSVReaderTest, ReadEmptyField) {
 }
 
 TEST_F(CSVReaderTest, ReadComplexField) {
-    CSVReader reader(test_csv_str);
-    ASSERT_TRUE(reader.Open());
+    auto tmp = CreateCSVReader(test_csv_str);
+    ASSERT_TRUE(tmp.has_value());
+    CSVReader reader = std::move(tmp.value());
     SkipRows(reader, 6);
 
     auto result = reader.NextStr();
@@ -162,8 +166,9 @@ TEST_F(CSVReaderTest, HasNextReturnsFalseAfterLastRow) {
     scheme << "description,string\n";
     scheme.flush();
 
-    CSVReader reader(test_scheme_file);
-    ASSERT_TRUE(reader.Open());
+    auto tmp = CreateCSVReader(test_scheme_file.string());
+    ASSERT_TRUE(tmp.has_value());
+    CSVReader reader = std::move(tmp.value());
 
     EXPECT_TRUE(reader.HasNext());
     reader.NextStr();
