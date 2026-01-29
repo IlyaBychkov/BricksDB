@@ -7,8 +7,7 @@
 
 class CSVReader {
 public:
-    CSVReader(const std::string& filename);
-
+    CSVReader() = default;
     ~CSVReader();
 
     CSVReader(const CSVReader&) = delete;
@@ -26,7 +25,12 @@ public:
     std::expected<std::vector<std::string>, std::string> NextStr();
 
 private:
+    CSVReader(const std::string& filename);
+    friend std::expected<CSVReader, std::string> CreateCSVReader(const std::string& csv_filename);
+
     std::string filename_;
     std::ifstream fin_;
     bool crashed_ = false;
 };
+
+std::expected<CSVReader, std::string> CreateCSVReader(const std::string& csv_filename);

@@ -58,6 +58,13 @@ const Column& Batch::GetColumn(size_t ind) const {
     return data_.at(ind);
 }
 
+std::vector<Column>& Batch::GetAllColumns() {
+    return data_;
+}
+const std::vector<Column>& Batch::GetAllColumns() const {
+    return data_;
+}
+
 void Batch::AddColumn(const Column& columnn, const SchemeElement& se) {
     data_.push_back(columnn);
     scheme_.AddElement(se);

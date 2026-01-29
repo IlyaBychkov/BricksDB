@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include <expected>
 
@@ -7,6 +9,7 @@
 
 struct CSVBatcher {
 public:
+    CSVBatcher() = default;
     CSVBatcher(Scheme&& scheme, CSVReader&& reader, int64_t batch_max_size);
 
     CSVBatcher(const CSVBatcher&) = delete;
@@ -18,6 +21,8 @@ public:
     bool IsCrashed();
     bool HasNextBatch();
     std::expected<Batch, std::string> NextBatch();
+
+    const Scheme& GetScheme();
 
 private:
     Scheme scheme_;

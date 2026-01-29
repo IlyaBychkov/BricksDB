@@ -26,24 +26,6 @@ public:
     }
 
     template <typename T>
-    T& At(size_t ind) {
-        using Vec = std::vector<T>;
-        if (!std::holds_alternative<Vec>(value_)) {
-            throw std::runtime_error("Column type mismatch on At");
-        }
-        return std::get<Vec>(value_).at(ind);
-    }
-
-    template <typename T>
-    const T& At(size_t ind) const {
-        using Vec = std::vector<T>;
-        if (!std::holds_alternative<Vec>(value_)) {
-            throw std::runtime_error("Column type mismatch on At const");
-        }
-        return std::get<Vec>(value_).at(ind);
-    }
-
-    template <typename T>
     std::vector<T>& GetVector() {
         using Vec = std::vector<T>;
         if (!std::holds_alternative<Vec>(value_)) {
@@ -52,17 +34,10 @@ public:
         return std::get<Vec>(value_);
     }
 
-    template <typename T>
-    const std::vector<T>& GetVector() const {
-        using Vec = std::vector<T>;
-        if (!std::holds_alternative<Vec>(value_)) {
-            throw std::runtime_error("Column type mismatch on GetVector const");
-        }
-        return std::get<Vec>(value_);
-    }
-
     ColumnValue& Value();
     const ColumnValue& Value() const;
+
+    bool WriteToFile(std::ofstream& fout) const;
 
 private:
     Type type_;
