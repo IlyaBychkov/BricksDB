@@ -153,13 +153,27 @@ TEST_F(CSVReaderTest, ReadComplexField) {
 }
 
 TEST_F(CSVReaderTest, HasNextReturnsFalseAfterLastRow) {
-    CSVReader reader(test_csv_str);
+    std::filesystem::path test_scheme_file =
+        std::filesystem::temp_directory_path() / "test_batcher_scheme.csv";
+
+    std::ofstream scheme(test_scheme_file);
+    scheme << "id,int64\n";
+    scheme << "name,string\n";
+    scheme << "description,string\n";
+    scheme.flush();
+
+    CSVReader reader(test_scheme_file);
     ASSERT_TRUE(reader.Open());
 
-    while (reader.HasNext()) {
-        reader.NextStr();
-    }
+    EXPECT_TRUE(reader.HasNext());
+    reader.NextStr();
+    EXPECT_TRUE(reader.HasNext());
+    reader.NextStr();
+    EXPECT_TRUE(reader.HasNext());
+    reader.NextStr();
 
     EXPECT_FALSE(reader.HasNext());
     EXPECT_FALSE(reader.NextStr().has_value());
+
+    std::filesystem::remove(test_scheme_file);
 }

@@ -6,3 +6,8 @@ build_tsan
 build_debug
 build_release
 /home/ilya-bychkov/VsCodeProjects/BricksDB/tests/csv/test_data.csv
+/home/ilya-bychkov/VsCodeProjects/BricksDB/tests/csv/scheme.csv
+/home/ilya-bychkov/VsCodeProjects/BricksDB/tests/csv/data.csv
+cmake-build-debug
+Testing
+.idea

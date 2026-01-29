@@ -19,7 +19,7 @@ bool CSVReader::IsCrashed() {
 }
 
 bool CSVReader::HasNext() {
-    return fin_.is_open() && !crashed_ && !fin_.eof();
+    return fin_.is_open() && !crashed_ && fin_.peek() != EOF;
 }
 
 std::expected<std::vector<std::string>, std::string> CSVReader::NextStr() {
