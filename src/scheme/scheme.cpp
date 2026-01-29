@@ -6,7 +6,7 @@
 SchemeElement::SchemeElement(const std::string& name, Type type) : name_(name), type_(type) {
 }
 
-std::string SchemeElement::GetName() const {
+const std::string& SchemeElement::GetName() const {
     return name_;
 }
 
@@ -65,10 +65,18 @@ size_t Scheme::GetSize() const {
     return values_.size();
 }
 
-SchemeElement Scheme::GetElement(size_t ind) const {
-    return values_[ind];
+const SchemeElement& Scheme::GetElement(size_t ind) const {
+    return values_.at(ind);
+}
+
+const std::string& Scheme::GetName(size_t ind) const {
+    return values_.at(ind).GetName();
+}
+
+Type Scheme::GetType(size_t ind) const {
+    return values_.at(ind).GetType();
 }
 
 void Scheme::AddElement(SchemeElement elem) {
-    values_.push_back(elem);
+    values_.push_back(std::move(elem));
 }
