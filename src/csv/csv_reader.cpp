@@ -14,8 +14,12 @@ bool CSVReader::Open() {
     return fin_.is_open();
 }
 
+bool CSVReader::IsCrashed() {
+    return crashed_;
+}
+
 bool CSVReader::HasNext() {
-    return fin_.is_open() && !crashed_ && !fin_.eof();
+    return fin_.is_open() && !crashed_ && fin_.peek() != EOF;
 }
 
 std::expected<std::vector<std::string>, std::string> CSVReader::NextStr() {
@@ -60,4 +64,12 @@ std::expected<std::vector<std::string>, std::string> CSVReader::NextStr() {
 
     crashed_ = true;
     return std::unexpected("no more records");
+}
+
+std::expected<CSVReader, std::string> CreateCSVReader(const std::string& csv_filename) {
+    CSVReader reader(csv_filename);
+    if (!reader.Open()) {
+        return std::unexpected("Failed to open CSV file: " + csv_filename);
+    }
+    return reader;
 }

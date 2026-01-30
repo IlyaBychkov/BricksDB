@@ -1,13 +1,13 @@
 #pragma once
 
+#include <expected>
 #include <fstream>
 #include <string>
 #include <vector>
 
 class CSVWriter {
 public:
-    CSVWriter(const std::string& filename);
-
+    CSVWriter() = default;
     ~CSVWriter();
 
     CSVWriter(const CSVWriter&) = delete;
@@ -16,16 +16,21 @@ public:
     CSVWriter(CSVWriter&&) = default;
     CSVWriter& operator=(CSVWriter&&) = default;
 
-    bool Open();
-
-    bool Crashed();
+    bool IsCrashed();
 
     bool Flush();
 
-    bool WriteStr(const std::vector<std::string>& fields, bool need_flush);
+    bool WriteRow(const std::vector<std::string>& fields, bool need_flush = false);
 
 private:
     std::string filename_;
     std::ofstream fout_;
     bool crashed_ = false;
+
+    friend std::expected<CSVWriter, std::string> CreateCSVWriter(const std::string& csv_filename);
+
+    CSVWriter(const std::string& filename);
+    bool Open();
 };
+
+std::expected<CSVWriter, std::string> CreateCSVWriter(const std::string& csv_filename);

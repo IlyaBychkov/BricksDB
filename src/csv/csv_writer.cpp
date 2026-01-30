@@ -19,7 +19,7 @@ bool CSVWriter::Open() {
     return true;
 }
 
-bool CSVWriter::Crashed() {
+bool CSVWriter::IsCrashed() {
     return crashed_;
 }
 
@@ -32,7 +32,7 @@ bool CSVWriter::Flush() {
     return true;
 }
 
-bool CSVWriter::WriteStr(const std::vector<std::string>& fields, bool need_flush) {
+bool CSVWriter::WriteRow(const std::vector<std::string>& fields, bool need_flush) {
     if (!fout_.is_open()) {
         crashed_ = true;
     }
@@ -91,4 +91,12 @@ bool CSVWriter::WriteStr(const std::vector<std::string>& fields, bool need_flush
     }
 
     return true;
+}
+
+std::expected<CSVWriter, std::string> CreateCSVWriter(const std::string& csv_filename) {
+    CSVWriter writer(csv_filename);
+    if (!writer.Open()) {
+        return std::unexpected("Failed to open CSV file for writing: " + csv_filename);
+    }
+    return writer;
 }
