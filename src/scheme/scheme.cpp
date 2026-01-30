@@ -51,12 +51,13 @@ bool Scheme::ConstructFromFile(const std::string& filename) {
 }
 
 bool Scheme::WriteToFile(const std::string& filename) const {
-    CSVWriter writer(filename);
-    if (!writer.Open()) {
+    auto tmp = CreateCSVWriter(filename);
+    if (!tmp) {
         return false;
     }
+    CSVWriter writer = std::move(tmp.value());
     for (const auto& elem : values_) {
-        if (!writer.WriteRow({elem.ToString()})) {
+        if (!writer.WriteRow({elem.GetName(), TypeToString(elem.GetType())})) {
             return false;
         }
     }
@@ -68,7 +69,7 @@ size_t Scheme::GetSize() const {
 }
 
 const SchemeElement& Scheme::GetElement(size_t ind) const {
-    return values_.at(ind);
+    return values_[ind];
 }
 
 const std::vector<SchemeElement>& Scheme::GetAllElements() const {
@@ -76,11 +77,11 @@ const std::vector<SchemeElement>& Scheme::GetAllElements() const {
 }
 
 const std::string& Scheme::GetName(size_t ind) const {
-    return values_.at(ind).GetName();
+    return values_[ind].GetName();
 }
 
 Type Scheme::GetType(size_t ind) const {
-    return values_.at(ind).GetType();
+    return values_[ind].GetType();
 }
 
 void Scheme::AddElement(SchemeElement elem) {

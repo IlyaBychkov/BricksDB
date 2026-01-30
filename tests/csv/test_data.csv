@@ -1,9 +1,0 @@
-id,name,description
-1,"Quoted field",SimpleText
-2,SimpleText,"Field with, comma inside and space ended "
-3,SimpleText,"This field contains
-a line break inside quotes"
-4,SimpleText,"String ""with"" quotes"
-5,Empty,""
-6,Last,"Final entry with all features: ""quotes"", commas, and newlines
-continued here"

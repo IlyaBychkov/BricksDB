@@ -10,5 +10,5 @@ add_test(NAME csv_writer_test COMMAND csv_writer_test)
 
 add_executable(csv_batcher_test csv_batcher_test.cpp)
 target_include_directories(csv_batcher_test PUBLIC ${CMAKE_SOURCE_DIR}/include/)
-target_link_libraries(csv_batcher_test csv_batcher scheme csv_writer csv_reader batch column type GTest::gtest GTest::gtest_main)
+target_link_libraries(csv_batcher_test csv_batcher GTest::gtest GTest::gtest_main)
 add_test(NAME csv_batcher_test COMMAND csv_batcher_test)

@@ -92,3 +92,11 @@ bool CSVWriter::WriteRow(const std::vector<std::string>& fields, bool need_flush
 
     return true;
 }
+
+std::expected<CSVWriter, std::string> CreateCSVWriter(const std::string& csv_filename) {
+    CSVWriter writer(csv_filename);
+    if (!writer.Open()) {
+        return std::unexpected("Failed to open CSV file for writing: " + csv_filename);
+    }
+    return writer;
+}

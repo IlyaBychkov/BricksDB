@@ -1,5 +1,6 @@
 #pragma once
 
+#include <istream>
 #include <ostream>
 
 #include "scheme/scheme.h"
@@ -8,16 +9,15 @@ public:
     Metadata() = default;
     Metadata(const Scheme& scheme) : scheme_(scheme) {
     }
-    Metadata(const Scheme& scheme, const std::vector<int64_t>& offsets)
-        : scheme_(scheme), offsets_(offsets) {
-    }
 
     bool WriteToFile(std::ostream& fout);
+    bool ReadFromFile(std::istream& fin);
 
-    void AddRowGroup(int64_t offset, int64_t rows) {
-        offsets_.push_back(offset);
-        rows_.push_back(rows);
-    }
+    void AddRowGroup(int64_t offset, int64_t rows);
+
+    Scheme& GetScheme();
+    std::vector<int64_t>& GetOffsets();
+    std::vector<int64_t>& GetRowsCnt();
 
 private:
     Scheme scheme_;

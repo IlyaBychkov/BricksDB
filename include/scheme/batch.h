@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 #include "column.h"
@@ -9,6 +10,7 @@ struct Batch {
 public:
     Batch(const std::vector<Column>& data, const Scheme& scheme);
     Batch(std::vector<Column>&& data, const Scheme& scheme);
+    Batch(const Scheme& scheme, std::ifstream& fin, int64_t rows_cnt);
 
     Batch(const Batch&) = default;
     Batch& operator=(const Batch&) = default;

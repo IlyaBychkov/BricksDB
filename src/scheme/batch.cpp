@@ -1,5 +1,7 @@
 #include "scheme/batch.h"
 
+#include <cstdint>
+#include <fstream>
 #include <stdexcept>
 #include <utility>
 
@@ -13,6 +15,19 @@ Batch::Batch(std::vector<Column>&& data, const Scheme& scheme)
     : data_(std::move(data)), scheme_(scheme) {
     if (!Validate()) {
         throw std::runtime_error("Invalid Batch construction");
+    }
+}
+
+Batch::Batch(const Scheme& scheme, std::ifstream& fin, int64_t rows_cnt) : scheme_(scheme) {
+    for (size_t i = 0; i < scheme_.GetSize(); ++i) {
+        data_.emplace_back(scheme_.GetType(i), rows_cnt);
+        if (!data_.back().ReadFromColumnar(fin, rows_cnt)) {
+            throw std::runtime_error("Failed to read column from columnar file");
+        }
+    }
+
+    if (!Validate()) {
+        throw std::runtime_error("Invalid Batch construction from file");
     }
 }
 
