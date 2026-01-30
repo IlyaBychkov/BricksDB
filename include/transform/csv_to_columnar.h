@@ -8,6 +8,7 @@
 struct CSVToColumnarTransformer {
 public:
     CSVToColumnarTransformer(const std::string& csv_filename, const std::string& scheme_filename,
+                             const std::string& columnar_filename,
                              int64_t batch_max_size = 1024 * 1024 * 512);
     ~CSVToColumnarTransformer();
 

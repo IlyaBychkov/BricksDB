@@ -4,11 +4,12 @@
 
 CSVToColumnarTransformer::CSVToColumnarTransformer(const std::string& csv_filename,
                                                    const std::string& scheme_filename,
+                                                   const std::string& columnar_filename,
                                                    int64_t batch_max_size)
     : csv_filename_(csv_filename),
       scheme_filename_(scheme_filename),
-      batch_max_size_(batch_max_size) {
-    columnar_filename_ = csv_filename_.substr(0, csv_filename_.find_last_of('.')) + ".br";
+      batch_max_size_(batch_max_size),
+      columnar_filename_(columnar_filename) {
 }
 
 CSVToColumnarTransformer::~CSVToColumnarTransformer() {
@@ -53,7 +54,7 @@ bool CSVToColumnarTransformer::Transform() {
 
 bool CSVToColumnarTransformer::WriteBatch(const Batch& batch) {
     for (const auto& column : batch.GetAllColumns()) {
-        if (!column.WriteToFile(fout_)) {
+        if (!column.WriteToColumnar(fout_)) {
             return false;
         }
     }

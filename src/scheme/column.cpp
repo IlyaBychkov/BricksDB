@@ -12,6 +12,14 @@ Column::Column(Type type) : type_(type) {
     }
 }
 
+Column::Column(Type type, int64_t size) : type_(type) {
+    if (type_ == Type::int64) {
+        value_ = ColumnValue(std::vector<int64_t>(size));
+    } else {
+        value_ = ColumnValue(std::vector<std::string>(size));
+    }
+}
+
 Type Column::GetType() const {
     return type_;
 }
@@ -23,27 +31,43 @@ size_t Column::GetSize() const {
 Column::ColumnValue& Column::Value() {
     return value_;
 }
-bool Column::WriteToFile(std::ofstream& fout) const {
-    auto visitor = Overloaded{[&fout](const std::vector<int64_t>& vec) {
-                                  fout.write(reinterpret_cast<const char*>(vec.data()),
-                                             vec.size() * sizeof(int64_t));
-                              },
-                              [&fout](const std::vector<std::string>& vec) {
-                                  int64_t pos = 0;
-                                  std::vector<int64_t> endings;
+bool Column::WriteToColumnar(std::ofstream& fout) const {
+    auto visitor = Overloaded{
+        [&fout](const std::vector<int64_t>& vec) {
+            fout.write(reinterpret_cast<const char*>(vec.data()), vec.size() * sizeof(int64_t));
+        },
+        [&fout](const std::vector<std::string>& vec) {
+            std::vector<int64_t> lens;
+            for (const auto& str : vec) {
+                lens.push_back(static_cast<int64_t>(str.size()));
+            }
 
-                                  for (const auto& str : vec) {
-                                      pos += static_cast<int64_t>(str.size());
-                                      endings.push_back(pos);
-                                  }
+            fout.write(reinterpret_cast<const char*>(lens.data()), lens.size() * sizeof(int64_t));
+            for (const auto& str : vec) {
+                fout.write(str.data(), str.size());
+            }
+        }};
 
-                                  fout.write(reinterpret_cast<const char*>(endings.data()),
-                                             endings.size() * sizeof(int64_t));
+    std::visit(visitor, value_);
+    return true;
+}
 
-                                  for (const auto& str : vec) {
-                                      fout.write(str.data(), str.size());
-                                  }
-                              }};
+bool Column::ReadFromColumnar(std::ifstream& fin, int64_t rows_cnt) {
+    auto visitor = Overloaded{
+        [&fin, rows_cnt](std::vector<int64_t>& vec) {
+            vec.resize(rows_cnt);
+            fin.read(reinterpret_cast<char*>(vec.data()), vec.size() * sizeof(int64_t));
+        },
+        [&fin, rows_cnt](std::vector<std::string>& vec) {
+            std::vector<int64_t> lens(rows_cnt);
+            fin.read(reinterpret_cast<char*>(lens.data()), lens.size() * sizeof(int64_t));
+
+            vec.resize(rows_cnt);
+            for (int64_t i = 0; i < rows_cnt; ++i) {
+                vec[i].resize(lens[i]);
+                fin.read(reinterpret_cast<char*>(vec[i].data()), lens[i]);
+            }
+        }};
 
     std::visit(visitor, value_);
     return true;
