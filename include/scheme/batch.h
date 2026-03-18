@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <expected>
 #include <vector>
 
 #include "column.h"
@@ -10,7 +11,6 @@ struct Batch {
 public:
     Batch(const std::vector<Column>& data, const Scheme& scheme);
     Batch(std::vector<Column>&& data, const Scheme& scheme);
-    Batch(const Scheme& scheme, std::ifstream& fin, int64_t rows_cnt);
 
     Batch(const Batch&) = default;
     Batch& operator=(const Batch&) = default;
@@ -18,11 +18,12 @@ public:
     Batch(Batch&&) = default;
     Batch& operator=(Batch&&) = default;
 
-    bool Validate() const;
+    std::expected<void, std::string> Validate() const;
 
     size_t ColumnsCnt() const;
     size_t RowsCnt() const;
 
+    Scheme& GetScheme();
     const Scheme& GetScheme() const;
 
     Type GetColumnType(size_t ind) const;
@@ -39,3 +40,6 @@ private:
     std::vector<Column> data_;
     Scheme scheme_;
 };
+
+std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std::ifstream& fin,
+                                                      int64_t rows_cnt);

@@ -66,12 +66,12 @@ TEST_F(TransformTest, CsvToColumnarAndBack_DefaultBatch) {
     {
         CSVToColumnarTransformer to_col(csv_file.string(), scheme_file.string(),
                                         columnar_file.string());
-        EXPECT_TRUE(to_col.Transform());
+        EXPECT_TRUE(to_col.Transform().has_value());
     }
     {
         ColumnarToCSVTransformer to_csv(columnar_file.string(), out_scheme_file.string(),
                                         out_csv_file.string());
-        EXPECT_TRUE(to_csv.Transform());
+        EXPECT_TRUE(to_csv.Transform().has_value());
     }
 
     EXPECT_TRUE(CompareCSV(csv_file, out_csv_file));
@@ -82,12 +82,12 @@ TEST_F(TransformTest, CsvToColumnarAndBack_SmallBatch) {
     {
         CSVToColumnarTransformer to_col(csv_file.string(), scheme_file.string(),
                                         columnar_file.string(), 1);
-        EXPECT_TRUE(to_col.Transform());
+        EXPECT_TRUE(to_col.Transform().has_value());
     }
     {
         ColumnarToCSVTransformer to_csv(columnar_file.string(), out_scheme_file.string(),
                                         out_csv_file.string());
-        EXPECT_TRUE(to_csv.Transform());
+        EXPECT_TRUE(to_csv.Transform().has_value());
     }
 
     EXPECT_TRUE(CompareCSV(csv_file, out_csv_file));

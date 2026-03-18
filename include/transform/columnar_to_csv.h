@@ -12,7 +12,7 @@ public:
                              const std::string& scheme_filename, const std::string& csv_filename);
     ~ColumnarToCSVTransformer();
 
-    bool Transform();
+    std::expected<void, std::string> Transform();
 
 private:
     std::string columnar_filename_;
@@ -22,6 +22,6 @@ private:
     std::ifstream fin_;
     CSVWriter csv_out_;
 
-    bool Prepare();
-    bool WriteBatchToCSV(const Batch& batch);
+    std::expected<void, std::string> Prepare();
+    std::expected<void, std::string> WriteBatchToCSV(const Batch& batch);
 };
