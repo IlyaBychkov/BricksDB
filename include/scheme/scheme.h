@@ -24,9 +24,6 @@ public:
     Scheme() = default;
     Scheme(const std::vector<SchemeElement>& values);
 
-    bool ConstructFromFile(const std::string& filename);
-    bool WriteToFile(const std::string& filename) const;
-
     size_t GetSize() const;
 
     const SchemeElement& GetElement(size_t ind) const;
@@ -39,3 +36,7 @@ public:
 private:
     std::vector<SchemeElement> values_;
 };
+
+std::expected<Scheme, std::string> CreateSchemeFromFile(const std::string& filename);
+
+std::expected<void, std::string> WriteSchemeToFile(Scheme scheme, const std::string& filename);

@@ -16,8 +16,6 @@ public:
     CSVReader(CSVReader&&) = default;
     CSVReader& operator=(CSVReader&&) = default;
 
-    bool Open();
-
     bool HasNext();
 
     bool IsCrashed();
@@ -25,12 +23,15 @@ public:
     std::expected<std::vector<std::string>, std::string> NextStr();
 
 private:
-    CSVReader(const std::string& filename);
-    friend std::expected<CSVReader, std::string> CreateCSVReader(const std::string& csv_filename);
-
     std::string filename_;
     std::ifstream fin_;
     bool crashed_ = false;
+
+    friend std::expected<CSVReader, std::string> CreateCSVReader(const std::string& csv_filename);
+
+    CSVReader(const std::string& filename);
+
+    bool Open();
 };
 
 std::expected<CSVReader, std::string> CreateCSVReader(const std::string& csv_filename);

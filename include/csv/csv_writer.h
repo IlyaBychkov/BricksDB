@@ -20,7 +20,8 @@ public:
 
     bool Flush();
 
-    bool WriteRow(const std::vector<std::string>& fields, bool need_flush = false);
+    std::expected<void, std::string> WriteRow(const std::vector<std::string>& fields,
+                                              bool need_flush = false);
 
 private:
     std::string filename_;
@@ -30,6 +31,7 @@ private:
     friend std::expected<CSVWriter, std::string> CreateCSVWriter(const std::string& csv_filename);
 
     CSVWriter(const std::string& filename);
+
     bool Open();
 };
 
