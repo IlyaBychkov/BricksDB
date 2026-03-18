@@ -44,10 +44,11 @@ public:
     ColumnValue& Value();
     const ColumnValue& Value() const;
 
-    bool WriteToColumnar(std::ofstream& fout) const;
-    bool ReadFromColumnar(std::ifstream& fin, int64_t rows_cnt);
-
 private:
     Type type_;
     ColumnValue value_;
 };
+
+std::expected<void, std::string> WriteColumnToColumnar(const Column& column, std::ofstream& fout);
+std::expected<Column, std::string> ReadColumnFromColumnar(Type type, std::ifstream& fin,
+                                                          int64_t rows_cnt);

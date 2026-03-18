@@ -21,49 +21,6 @@ std::string SchemeElement::ToString() const {
 Scheme::Scheme(const std::vector<SchemeElement>& values) : values_(values) {
 }
 
-bool Scheme::ConstructFromFile(const std::string& filename) {
-    auto res = CreateCSVReader(filename);
-    if (!res.has_value()) {
-        return false;
-    }
-    CSVReader reader = std::move(res.value());
-
-    while (reader.HasNext()) {
-        auto tmp = reader.NextStr();
-        if (!tmp.has_value()) {
-            return false;
-        }
-        auto row = tmp.value();
-        if (row.size() != 2) {
-            return false;
-        }
-        Type type;
-        if (row[1] == "int64") {
-            type = Type::int64;
-        } else if (row[1] == "string") {
-            type = Type::string;
-        } else {
-            return false;
-        }
-        values_.emplace_back(row[0], type);
-    }
-    return !reader.IsCrashed();
-}
-
-bool Scheme::WriteToFile(const std::string& filename) const {
-    auto tmp = CreateCSVWriter(filename);
-    if (!tmp) {
-        return false;
-    }
-    CSVWriter writer = std::move(tmp.value());
-    for (const auto& elem : values_) {
-        if (!writer.WriteRow({elem.GetName(), TypeToString(elem.GetType())})) {
-            return false;
-        }
-    }
-    return !writer.IsCrashed();
-}
-
 size_t Scheme::GetSize() const {
     return values_.size();
 }
@@ -86,4 +43,48 @@ Type Scheme::GetType(size_t ind) const {
 
 void Scheme::AddElement(SchemeElement elem) {
     values_.push_back(std::move(elem));
+}
+
+std::expected<Scheme, std::string> CreateSchemeFromFile(const std::string& filename) {
+    auto res = CreateCSVReader(filename);
+    if (!res.has_value()) {
+        return std::unexpected(res.error());
+    }
+    CSVReader reader = std::move(res.value());
+    Scheme scheme;
+
+    while (reader.HasNext()) {
+        auto tmp = reader.NextStr();
+        if (!tmp.has_value()) {
+            return std::unexpected(tmp.error());
+        }
+        auto row = tmp.value();
+        if (row.size() != 2) {
+            return std::unexpected("Invalid row size");
+        }
+        auto tmp_type = StringToType(row[1]);
+        if (!tmp_type.has_value()) {
+            return std::unexpected(tmp_type.error());
+        }
+        scheme.AddElement(SchemeElement(row[0], tmp_type.value()));
+    }
+    return scheme;
+}
+
+std::expected<void, std::string> WriteSchemeToFile(Scheme scheme, const std::string& filename) {
+    auto wrirer_tmp = CreateCSVWriter(filename);
+    if (!wrirer_tmp) {
+        return std::unexpected(wrirer_tmp.error());
+    }
+    CSVWriter writer = std::move(*wrirer_tmp);
+    for (const auto& elem : scheme.GetAllElements()) {
+        auto res = writer.WriteRow({elem.GetName(), TypeToString(elem.GetType())});
+        if (!res) {
+            return std::unexpected(res.error());
+        }
+    }
+    if (writer.IsCrashed()) {
+        return std::unexpected("Writer crashed");
+    }
+    return {};
 }

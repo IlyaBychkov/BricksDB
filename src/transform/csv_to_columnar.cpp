@@ -18,46 +18,61 @@ CSVToColumnarTransformer::~CSVToColumnarTransformer() {
     }
 }
 
-bool CSVToColumnarTransformer::Prepare() {
+std::expected<void, std::string> CSVToColumnarTransformer::Prepare() {
     auto tmp = CreateCSVBatcher(csv_filename_, scheme_filename_, batch_max_size_);
-    if (!tmp.has_value()) {
-        return false;
+    if (!tmp) {
+        return std::unexpected(tmp.error());
     }
     batcher_ = std::move(tmp.value());
     fout_.open(columnar_filename_, std::ios::binary);
-    return fout_.is_open();
+    if (!fout_.is_open()) {
+        return std::unexpected("Failed to open columnar file");
+    }
+    return {};
 }
 
-bool CSVToColumnarTransformer::Transform() {
-    if (!Prepare()) {
-        return false;
+std::expected<void, std::string> CSVToColumnarTransformer::Transform() {
+    auto prepare_res = Prepare();
+    if (!prepare_res) {
+        return std::unexpected("Prepare failed: " + prepare_res.error());
     }
 
     Metadata metadata(batcher_.GetScheme());
 
     while (batcher_.HasNextBatch()) {
-        auto tmp2 = batcher_.NextBatch();
-        if (!tmp2.has_value()) {
-            return false;
+        auto batch_tmp = batcher_.NextBatch();
+        if (!batch_tmp) {
+            return std::unexpected(batch_tmp.error());
         }
-        Batch batch = std::move(tmp2.value());
+        Batch batch = std::move(*batch_tmp);
         metadata.AddRowGroup(fout_.tellp(), batch.RowsCnt());
-        if (!WriteBatch(batch)) {
-            return false;
+        auto res = WriteBatch(batch);
+        if (!res) {
+            return std::unexpected(res.error());
         }
     }
 
-    metadata.WriteToFile(fout_);
+    auto res = WriteMetadataToFile(metadata, fout_);
+    if (!res) {
+        return std::unexpected(res.error());
+    }
 
-    return !batcher_.IsCrashed();
+    if (batcher_.IsCrashed()) {
+        return std::unexpected("Batcher crashed during transformation");
+    }
+    return {};
 }
 
-bool CSVToColumnarTransformer::WriteBatch(const Batch& batch) {
+std::expected<void, std::string> CSVToColumnarTransformer::WriteBatch(const Batch& batch) {
     for (const auto& column : batch.GetAllColumns()) {
-        if (!column.WriteToColumnar(fout_)) {
-            return false;
+        auto res = WriteColumnToColumnar(column, fout_);
+        if (!res) {
+            return std::unexpected(res.error());
         }
     }
 
-    return fout_.good();
+    if (!fout_.good()) {
+        return std::unexpected("Failed to write batch to columnar file");
+    }
+    return {};
 }

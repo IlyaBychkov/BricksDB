@@ -10,9 +10,6 @@ public:
     Metadata(const Scheme& scheme) : scheme_(scheme) {
     }
 
-    bool WriteToFile(std::ostream& fout);
-    bool ReadFromFile(std::istream& fin);
-
     void AddRowGroup(int64_t offset, int64_t rows);
 
     Scheme& GetScheme();
@@ -24,3 +21,6 @@ private:
     std::vector<int64_t> offsets_;
     std::vector<int64_t> rows_;
 };
+
+std::expected<void, std::string> WriteMetadataToFile(Metadata metadata, std::ostream& fout);
+std::expected<Metadata, std::string> ReadMetadataFromFile(std::istream& fin);

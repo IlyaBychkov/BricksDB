@@ -1,7 +1,10 @@
 #include "transform/columnar_to_csv.h"
 
+#include <expected>
+
 #include "scheme/batch.h"
 #include "scheme/column.h"
+#include "scheme/scheme.h"
 #include "transform/metadata.h"
 
 ColumnarToCSVTransformer::ColumnarToCSVTransformer(const std::string& columnar_filename,
@@ -18,47 +21,60 @@ ColumnarToCSVTransformer::~ColumnarToCSVTransformer() {
     }
 }
 
-bool ColumnarToCSVTransformer::Prepare() {
+std::expected<void, std::string> ColumnarToCSVTransformer::Prepare() {
     fin_.open(columnar_filename_, std::ios::binary);
     if (!fin_.is_open()) {
-        return false;
+        return std::unexpected("Failed to open columnar file");
     }
 
     auto tmp_csv = CreateCSVWriter(csv_filename_);
-    if (!tmp_csv.has_value()) {
-        return false;
+    if (!tmp_csv) {
+        return std::unexpected(tmp_csv.error());
     }
-    csv_out_ = std::move(tmp_csv.value());
+    csv_out_ = std::move(*tmp_csv);
 
-    return true;
+    return {};
 }
 
-bool ColumnarToCSVTransformer::Transform() {
-    if (!Prepare()) {
-        return false;
+std::expected<void, std::string> ColumnarToCSVTransformer::Transform() {
+    auto prepare_res = Prepare();
+    if (!prepare_res) {
+        return std::unexpected("Prepare failed: " + prepare_res.error());
     }
 
-    Metadata metadata;
-    if (!metadata.ReadFromFile(fin_)) {
-        return false;
+    auto metadata_res = ReadMetadataFromFile(fin_);
+    if (!metadata_res) {
+        return std::unexpected(metadata_res.error());
     }
+    Metadata metadata = *metadata_res;
 
     Scheme scheme = metadata.GetScheme();
-    scheme.WriteToFile(scheme_filename_);
+    WriteSchemeToFile(scheme, scheme_filename_);
 
     std::vector<int64_t>& offsets = metadata.GetOffsets();
     std::vector<int64_t>& rows = metadata.GetRowsCnt();
 
     for (size_t i = 0; i < offsets.size(); ++i) {
         fin_.seekg(offsets[i], std::ios::beg);
-        Batch batch(scheme, fin_, rows[i]);
-        WriteBatchToCSV(batch);
+        auto batch_tmp = CreateBatchFromFile(scheme, fin_, rows[i]);
+        if (!batch_tmp) {
+            return std::unexpected(batch_tmp.error());
+        }
+        Batch batch = std::move(*batch_tmp);
+        auto res = WriteBatchToCSV(batch);
+        if (!res) {
+            return std::unexpected(res.error());
+        }
     }
 
-    return !csv_out_.IsCrashed();
+    if (csv_out_.IsCrashed()) {
+        return std::unexpected("CSVWriter crashed");
+    }
+
+    return {};
 }
 
-bool ColumnarToCSVTransformer::WriteBatchToCSV(const Batch& batch) {
+std::expected<void, std::string> ColumnarToCSVTransformer::WriteBatchToCSV(const Batch& batch) {
     for (size_t i = 0; i < batch.RowsCnt(); ++i) {
         std::vector<std::string> row;
         for (size_t c = 0; c < batch.ColumnsCnt(); ++c) {
@@ -69,12 +85,16 @@ bool ColumnarToCSVTransformer::WriteBatchToCSV(const Batch& batch) {
                 const auto& val = batch.GetColumn(c).GetValue<std::string>(i);
                 row.push_back(val);
             } else {
-                return false;
+                return std::unexpected("Unsupported column type");
             }
         }
-        if (!csv_out_.WriteRow(row)) {
-            return false;
+        auto res = csv_out_.WriteRow(row);
+        if (!res) {
+            return std::unexpected(res.error());
         }
     }
-    return !csv_out_.IsCrashed();
+    if (csv_out_.IsCrashed()) {
+        return std::unexpected("CSVWriter crashed");
+    }
+    return {};
 }

@@ -18,29 +18,16 @@ Batch::Batch(std::vector<Column>&& data, const Scheme& scheme)
     }
 }
 
-Batch::Batch(const Scheme& scheme, std::ifstream& fin, int64_t rows_cnt) : scheme_(scheme) {
-    for (size_t i = 0; i < scheme_.GetSize(); ++i) {
-        data_.emplace_back(scheme_.GetType(i), rows_cnt);
-        if (!data_.back().ReadFromColumnar(fin, rows_cnt)) {
-            throw std::runtime_error("Failed to read column from columnar file");
-        }
-    }
-
-    if (!Validate()) {
-        throw std::runtime_error("Invalid Batch construction from file");
-    }
-}
-
-bool Batch::Validate() const {
+std::expected<void, std::string> Batch::Validate() const {
     if (data_.size() != scheme_.GetSize()) {
-        return false;
+        return std::unexpected("Column count mismatch");
     }
     for (size_t i = 0; i < data_.size(); ++i) {
         if (data_[i].GetType() != scheme_.GetType(i) || data_[i].GetSize() != data_[0].GetSize()) {
-            return false;
+            return std::unexpected("Column data mismatch");
         }
     }
-    return true;
+    return {};
 }
 
 size_t Batch::ColumnsCnt() const {
@@ -54,6 +41,9 @@ size_t Batch::RowsCnt() const {
     return data_[0].GetSize();
 }
 
+Scheme& Batch::GetScheme() {
+    return scheme_;
+}
 const Scheme& Batch::GetScheme() const {
     return scheme_;
 }
@@ -83,4 +73,24 @@ const std::vector<Column>& Batch::GetAllColumns() const {
 void Batch::AddColumn(const Column& columnn, const SchemeElement& se) {
     data_.push_back(columnn);
     scheme_.AddElement(se);
+}
+
+std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std::ifstream& fin,
+                                                      int64_t rows_cnt) {
+    std::vector<Column> data;
+    for (size_t i = 0; i < scheme.GetSize(); ++i) {
+        auto res = ReadColumnFromColumnar(scheme.GetType(i), fin, rows_cnt);
+        if (!res) {
+            throw std::runtime_error(res.error());
+        }
+        data.push_back(std::move(*res));
+    }
+
+    Batch batch(std::move(data), scheme);
+    auto res = batch.Validate();
+    if (!res) {
+        throw std::runtime_error(res.error());
+    }
+
+    return batch;
 }

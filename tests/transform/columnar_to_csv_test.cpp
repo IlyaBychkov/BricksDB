@@ -7,8 +7,9 @@ int main() {
         "/home/ilya-bychkov/VsCodeProjects/BricksDB/test_files/data.br",
         "/home/ilya-bychkov/VsCodeProjects/BricksDB/test_files/data_scheme.csv",
         "/home/ilya-bychkov/VsCodeProjects/BricksDB/test_files/data_res.csv");
-    if (!transformer.Transform()) {
-        std::cout << "Transformation failed" << std::endl;
+    auto res = transformer.Transform();
+    if (!res) {
+        std::cout << "Transformation failed: " << res.error() << std::endl;
     } else {
         std::cout << "Transformation succeeded" << std::endl;
     }
