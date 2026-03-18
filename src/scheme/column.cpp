@@ -31,7 +31,12 @@ size_t Column::GetSize() const {
 Column::ColumnValue& Column::Value() {
     return value_;
 }
-bool Column::WriteToColumnar(std::ofstream& fout) const {
+
+const Column::ColumnValue& Column::Value() const {
+    return value_;
+}
+
+std::expected<void, std::string> WriteColumnToColumnar(const Column& column, std::ofstream& fout) {
     auto visitor = Overloaded{
         [&fout](const std::vector<int64_t>& vec) {
             fout.write(reinterpret_cast<const char*>(vec.data()), vec.size() * sizeof(int64_t));
@@ -48,11 +53,18 @@ bool Column::WriteToColumnar(std::ofstream& fout) const {
             }
         }};
 
-    std::visit(visitor, value_);
-    return true;
+    try {
+        std::visit(visitor, column.Value());
+    } catch (...) {
+        return std::unexpected("Failed to write column to columnar file");
+    }
+    return {};
 }
 
-bool Column::ReadFromColumnar(std::ifstream& fin, int64_t rows_cnt) {
+std::expected<Column, std::string> ReadColumnFromColumnar(Type type, std::ifstream& fin,
+                                                          int64_t rows_cnt) {
+    Column column(type, rows_cnt);
+
     auto visitor = Overloaded{
         [&fin, rows_cnt](std::vector<int64_t>& vec) {
             vec.resize(rows_cnt);
@@ -69,6 +81,10 @@ bool Column::ReadFromColumnar(std::ifstream& fin, int64_t rows_cnt) {
             }
         }};
 
-    std::visit(visitor, value_);
-    return true;
+    try {
+        std::visit(visitor, column.Value());
+    } catch (...) {
+        return std::unexpected("Failed to read column from columnar file");
+    }
+    return column;
 }

@@ -3,16 +3,15 @@
 std::expected<CSVBatcher, std::string> CreateCSVBatcher(const std::string& csv_filename,
                                                         const std::string& scheme_file,
                                                         int64_t batch_max_size) {
-    auto tmp = CreateCSVReader(csv_filename);
-    if (!tmp.has_value()) {
-        return std::unexpected("Failed to open CSV file: " + csv_filename);
+    auto reader = CreateCSVReader(csv_filename);
+    if (!reader.has_value()) {
+        return std::unexpected(reader.error());
     }
-    CSVReader reader = std::move(tmp.value());
-    Scheme scheme;
-    if (!scheme.ConstructFromFile(scheme_file)) {
-        return std::unexpected("Failed to open scheme file: " + scheme_file);
+    auto scheme = CreateSchemeFromFile(scheme_file);
+    if (!scheme.has_value()) {
+        return std::unexpected(scheme.error());
     }
-    return CSVBatcher(std::move(scheme), std::move(reader), batch_max_size);
+    return CSVBatcher(std::move(*scheme), std::move(*reader), batch_max_size);
 }
 
 CSVBatcher::CSVBatcher(Scheme&& scheme, CSVReader&& reader, int64_t batch_max_size)

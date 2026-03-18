@@ -12,7 +12,7 @@ public:
                              int64_t batch_max_size = 1024 * 1024 * 512);
     ~CSVToColumnarTransformer();
 
-    bool Transform();
+    std::expected<void, std::string> Transform();
 
 private:
     std::string csv_filename_;
@@ -24,6 +24,6 @@ private:
     CSVBatcher batcher_;
     std::ofstream fout_;
 
-    bool Prepare();
-    bool WriteBatch(const Batch& batch);
+    std::expected<void, std::string> Prepare();
+    std::expected<void, std::string> WriteBatch(const Batch& batch);
 };
