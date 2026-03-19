@@ -10,3 +10,4 @@ Testing
 .idea
 .pre-commit-config.yaml
 test_files
+hits_files
