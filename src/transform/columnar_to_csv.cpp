@@ -1,10 +1,14 @@
 #include "transform/columnar_to_csv.h"
 
+#include <chrono>
 #include <expected>
+#include <format>
+#include <string>
 
 #include "scheme/batch.h"
 #include "scheme/column.h"
 #include "scheme/scheme.h"
+#include "scheme/type.h"
 #include "transform/metadata.h"
 
 ColumnarToCSVTransformer::ColumnarToCSVTransformer(const std::string& columnar_filename,
@@ -90,18 +94,27 @@ std::expected<void, std::string> ColumnarToCSVTransformer::WriteBatchToCSV(const
     for (size_t i = 0; i < batch.RowsCnt(); ++i) {
         std::vector<std::string> row;
         for (size_t c = 0; c < batch.ColumnsCnt(); ++c) {
-            if (batch.GetColumnType(c) == Type::int64) {
+            Type t = batch.GetColumnType(c);
+            if (t == Type::int64) {
                 const auto& val = batch.GetColumn(c).GetValue<int64_t>(i);
                 row.push_back(std::to_string(val));
-            } else if (batch.GetColumnType(c) == Type::int32) {
+            } else if (t == Type::int32) {
                 const auto& val = batch.GetColumn(c).GetValue<int32_t>(i);
                 row.push_back(std::to_string(val));
-            } else if (batch.GetColumnType(c) == Type::int16) {
+            } else if (t == Type::int16) {
                 const auto& val = batch.GetColumn(c).GetValue<int16_t>(i);
                 row.push_back(std::to_string(val));
-            } else if (batch.GetColumnType(c) == Type::string) {
+            } else if (t == Type::string) {
                 const auto& val = batch.GetColumn(c).GetValue<std::string>(i);
                 row.push_back(val);
+            } else if (t == Type::timestamp) {
+                const auto& val = batch.GetColumn(c).GetValue<int64_t>(i);
+                std::chrono::sys_seconds ts{std::chrono::seconds{val}};
+                row.push_back(std::format("{:%F %T}", ts));
+            } else if (t == Type::date) {
+                const auto& val = batch.GetColumn(c).GetValue<int32_t>(i);
+                std::chrono::sys_days dt{std::chrono::days{val}};
+                row.push_back(std::format("{:%F}", dt));
             } else {
                 return std::unexpected(std::string("ColumnarToCSVTransformer::WriteBatchToCSV: "
                                                    "Unsupported column type at column ") +

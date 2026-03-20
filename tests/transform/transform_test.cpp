@@ -25,23 +25,25 @@ protected:
         out_scheme_file = tmp_dir / "test_scheme_res.csv";
 
         std::ofstream csv(csv_file);
-        csv << "1,2,first,4\n";
-        csv << "5,1,second,2\n";
-        csv << "8,17,third,2\n";
+        csv << "1,2,first,4,\"2013-07-14 20:38:47\",\"2013-07-15\"\n";
+        csv << "5,1,second,2,\"2013-03-18 00:59:47\",\"2025-01-15\"\n";
+        csv << "8,17,third,2,\"2000-07-14 20:55:59\",\"1972-12-01\"\n";
 
         std::ofstream scheme(scheme_file);
         scheme << "a,int64\n";
         scheme << "b,int32\n";
         scheme << "name123,string\n";
         scheme << "d,int16\n";
+        scheme << "e,timestamp\n";
+        scheme << "f,date\n";
     }
 
     void TearDown() override {
-        // std::filesystem::remove(csv_file);
-        // std::filesystem::remove(scheme_file);
-        // std::filesystem::remove(columnar_file);
-        // std::filesystem::remove(out_csv_file);
-        // std::filesystem::remove(out_scheme_file);
+        std::filesystem::remove(csv_file);
+        std::filesystem::remove(scheme_file);
+        std::filesystem::remove(columnar_file);
+        std::filesystem::remove(out_csv_file);
+        std::filesystem::remove(out_scheme_file);
     }
 
     static bool CompareCSV(const std::filesystem::path& file1, const std::filesystem::path& file2) {

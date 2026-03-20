@@ -5,9 +5,9 @@
 #include "scheme/overloaded.h"
 
 Column::Column(Type type) : type_(type) {
-    if (type_ == Type::int64) {
+    if (type_ == Type::int64 || type_ == Type::timestamp) {
         value_ = ColumnValue(std::vector<int64_t>{});
-    } else if (type_ == Type::int32) {
+    } else if (type_ == Type::int32 || type_ == Type::date) {
         value_ = ColumnValue(std::vector<int32_t>{});
     } else if (type_ == Type::int16) {
         value_ = ColumnValue(std::vector<int16_t>{});
@@ -19,9 +19,9 @@ Column::Column(Type type) : type_(type) {
 }
 
 Column::Column(Type type, int64_t size) : type_(type) {
-    if (type_ == Type::int64) {
+    if (type_ == Type::int64 || type_ == Type::timestamp) {
         value_ = ColumnValue(std::vector<int64_t>(size));
-    } else if (type_ == Type::int32) {
+    } else if (type_ == Type::int32 || type_ == Type::date) {
         value_ = ColumnValue(std::vector<int32_t>(size));
     } else if (type_ == Type::int16) {
         value_ = ColumnValue(std::vector<int16_t>(size));

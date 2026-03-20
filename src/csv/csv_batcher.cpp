@@ -1,5 +1,9 @@
 #include "csv/csv_batcher.h"
 
+#include <chrono>
+#include <expected>
+#include <sstream>
+
 std::expected<CSVBatcher, std::string> CreateCSVBatcher(const std::string& csv_filename,
                                                         const std::string& scheme_file,
                                                         int64_t batch_max_size) {
@@ -50,18 +54,39 @@ std::expected<Batch, std::string> CSVBatcher::NextBatch() {
         }
 
         for (size_t i = 0; i < columns.size(); ++i) {
-            if (scheme_.GetType(i) == Type::int64) {
+            Type t = scheme_.GetType(i);
+            if (t == Type::int64) {
                 columns[i].Push<int64_t>(std::stoll(row[i]));
                 current_batch_size += sizeof(int64_t);
-            } else if (scheme_.GetType(i) == Type::int32) {
+            } else if (t == Type::int32) {
                 columns[i].Push<int32_t>(static_cast<int32_t>(std::stoll(row[i])));
                 current_batch_size += sizeof(int32_t);
-            } else if (scheme_.GetType(i) == Type::int16) {
+            } else if (t == Type::int16) {
                 columns[i].Push<int16_t>(static_cast<int16_t>(std::stoll(row[i])));
                 current_batch_size += sizeof(int16_t);
-            } else if (scheme_.GetType(i) == Type::string) {
+            } else if (t == Type::string) {
                 columns[i].Push<std::string>(row[i]);
                 current_batch_size += row[i].size();
+            } else if (t == Type::timestamp) {
+                std::chrono::sys_seconds ts;
+                std::istringstream ss(row[i]);
+                ss >> std::chrono::parse("%Y-%m-%d %H:%M:%S", ts);
+                if (ss.fail()) {
+                    return std::unexpected(
+                        std::string("CSVBatcher::NextBatch: Failed to parse timestamp: ") + row[i]);
+                }
+                columns[i].Push<int64_t>(static_cast<int64_t>(ts.time_since_epoch().count()));
+                current_batch_size += sizeof(int64_t);
+            } else if (t == Type::date) {
+                std::chrono::sys_days dt;
+                std::istringstream ss(row[i]);
+                ss >> std::chrono::parse("%Y-%m-%d", dt);
+                if (ss.fail()) {
+                    return std::unexpected(
+                        std::string("CSVBatcher::NextBatch: Failed to parse date: ") + row[i]);
+                }
+                columns[i].Push<int32_t>(static_cast<int32_t>(dt.time_since_epoch().count()));
+                current_batch_size += sizeof(int32_t);
             } else {
                 return std::unexpected(
                     std::string("CSVBatcher::NextBatch: Unsupported type at column ") +
