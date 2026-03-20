@@ -7,16 +7,28 @@
 Column::Column(Type type) : type_(type) {
     if (type_ == Type::int64) {
         value_ = ColumnValue(std::vector<int64_t>{});
-    } else {
+    } else if (type_ == Type::int32) {
+        value_ = ColumnValue(std::vector<int32_t>{});
+    } else if (type_ == Type::int16) {
+        value_ = ColumnValue(std::vector<int16_t>{});
+    } else if (type_ == Type::string) {
         value_ = ColumnValue(std::vector<std::string>{});
+    } else {
+        throw std::runtime_error("Unsupported type for Column");
     }
 }
 
 Column::Column(Type type, int64_t size) : type_(type) {
     if (type_ == Type::int64) {
         value_ = ColumnValue(std::vector<int64_t>(size));
-    } else {
+    } else if (type_ == Type::int32) {
+        value_ = ColumnValue(std::vector<int32_t>(size));
+    } else if (type_ == Type::int16) {
+        value_ = ColumnValue(std::vector<int16_t>(size));
+    } else if (type_ == Type::string) {
         value_ = ColumnValue(std::vector<std::string>(size));
+    } else {
+        throw std::runtime_error("Unsupported type for Column");
     }
 }
 
@@ -41,6 +53,12 @@ std::expected<void, std::string> WriteColumnToColumnar(const Column& column, std
         [&fout](const std::vector<int64_t>& vec) {
             fout.write(reinterpret_cast<const char*>(vec.data()), vec.size() * sizeof(int64_t));
         },
+        [&fout](const std::vector<int32_t>& vec) {
+            fout.write(reinterpret_cast<const char*>(vec.data()), vec.size() * sizeof(int32_t));
+        },
+        [&fout](const std::vector<int16_t>& vec) {
+            fout.write(reinterpret_cast<const char*>(vec.data()), vec.size() * sizeof(int16_t));
+        },
         [&fout](const std::vector<std::string>& vec) {
             std::vector<int64_t> lens;
             for (const auto& str : vec) {
@@ -56,7 +74,9 @@ std::expected<void, std::string> WriteColumnToColumnar(const Column& column, std
     try {
         std::visit(visitor, column.Value());
     } catch (...) {
-        return std::unexpected("Failed to write column to columnar file");
+        return std::unexpected(
+            std::string("WriteColumnToColumnar: Failed to write column of type ") +
+            TypeToString(column.GetType()));
     }
     return {};
 }
@@ -69,6 +89,14 @@ std::expected<Column, std::string> ReadColumnFromColumnar(Type type, std::ifstre
         [&fin, rows_cnt](std::vector<int64_t>& vec) {
             vec.resize(rows_cnt);
             fin.read(reinterpret_cast<char*>(vec.data()), vec.size() * sizeof(int64_t));
+        },
+        [&fin, rows_cnt](std::vector<int32_t>& vec) {
+            vec.resize(rows_cnt);
+            fin.read(reinterpret_cast<char*>(vec.data()), vec.size() * sizeof(int32_t));
+        },
+        [&fin, rows_cnt](std::vector<int16_t>& vec) {
+            vec.resize(rows_cnt);
+            fin.read(reinterpret_cast<char*>(vec.data()), vec.size() * sizeof(int16_t));
         },
         [&fin, rows_cnt](std::vector<std::string>& vec) {
             std::vector<int64_t> lens(rows_cnt);
@@ -84,7 +112,9 @@ std::expected<Column, std::string> ReadColumnFromColumnar(Type type, std::ifstre
     try {
         std::visit(visitor, column.Value());
     } catch (...) {
-        return std::unexpected("Failed to read column from columnar file");
+        return std::unexpected(
+            std::string("ReadColumnFromColumnar: Failed to read column of type ") +
+            TypeToString(type));
     }
     return column;
 }

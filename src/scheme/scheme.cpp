@@ -48,7 +48,8 @@ void Scheme::AddElement(SchemeElement elem) {
 std::expected<Scheme, std::string> CreateSchemeFromFile(const std::string& filename) {
     auto res = CreateCSVReader(filename);
     if (!res.has_value()) {
-        return std::unexpected(res.error());
+        return std::unexpected(std::string("CreateSchemeFromFile: CreateCSVReader failed for '") +
+                               filename + "': " + res.error());
     }
     CSVReader reader = std::move(res.value());
     Scheme scheme;
@@ -56,15 +57,19 @@ std::expected<Scheme, std::string> CreateSchemeFromFile(const std::string& filen
     while (reader.HasNext()) {
         auto tmp = reader.NextStr();
         if (!tmp.has_value()) {
-            return std::unexpected(tmp.error());
+            return std::unexpected(
+                std::string("CreateSchemeFromFile: CSVReader NextStr failed for '") + filename +
+                "': " + tmp.error());
         }
         auto row = tmp.value();
         if (row.size() != 2) {
-            return std::unexpected("Invalid row size");
+            return std::unexpected(std::string("CreateSchemeFromFile: Invalid row size in '") +
+                                   filename + "'");
         }
         auto tmp_type = StringToType(row[1]);
         if (!tmp_type.has_value()) {
-            return std::unexpected(tmp_type.error());
+            return std::unexpected(std::string("CreateSchemeFromFile: Unknown type in '") +
+                                   filename + "' for value '" + row[1] + "': " + tmp_type.error());
         }
         scheme.AddElement(SchemeElement(row[0], tmp_type.value()));
     }
@@ -74,17 +79,21 @@ std::expected<Scheme, std::string> CreateSchemeFromFile(const std::string& filen
 std::expected<void, std::string> WriteSchemeToFile(Scheme scheme, const std::string& filename) {
     auto wrirer_tmp = CreateCSVWriter(filename);
     if (!wrirer_tmp) {
-        return std::unexpected(wrirer_tmp.error());
+        return std::unexpected(std::string("WriteSchemeToFile: CreateCSVWriter failed for '") +
+                               filename + "': " + wrirer_tmp.error());
     }
     CSVWriter writer = std::move(*wrirer_tmp);
     for (const auto& elem : scheme.GetAllElements()) {
         auto res = writer.WriteRow({elem.GetName(), TypeToString(elem.GetType())});
         if (!res) {
-            return std::unexpected(res.error());
+            return std::unexpected(std::string("WriteSchemeToFile: failed writing element '") +
+                                   elem.GetName() + "' to '" + filename + "': " + res.error());
         }
     }
     if (writer.IsCrashed()) {
-        return std::unexpected("Writer crashed");
+        return std::unexpected(
+            std::string("WriteSchemeToFile: CSVWriter crashed while writing to '") + filename +
+            "'");
     }
     return {};
 }

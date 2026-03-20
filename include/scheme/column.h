@@ -9,7 +9,8 @@
 
 struct Column {
 public:
-    using ColumnValue = std::variant<std::vector<int64_t>, std::vector<std::string>>;
+    using ColumnValue = std::variant<std::vector<int64_t>, std::vector<int32_t>,
+                                     std::vector<int16_t>, std::vector<std::string>>;
 
     Column(Type type);
     Column(Type type, int64_t size);

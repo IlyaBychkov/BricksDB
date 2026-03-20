@@ -31,17 +31,17 @@ protected:
 
         std::ofstream scheme(scheme_file);
         scheme << "a,int64\n";
-        scheme << "b,int64\n";
+        scheme << "b,int32\n";
         scheme << "name123,string\n";
-        scheme << "d,int64\n";
+        scheme << "d,int16\n";
     }
 
     void TearDown() override {
-        std::filesystem::remove(csv_file);
-        std::filesystem::remove(scheme_file);
-        std::filesystem::remove(columnar_file);
-        std::filesystem::remove(out_csv_file);
-        std::filesystem::remove(out_scheme_file);
+        // std::filesystem::remove(csv_file);
+        // std::filesystem::remove(scheme_file);
+        // std::filesystem::remove(columnar_file);
+        // std::filesystem::remove(out_csv_file);
+        // std::filesystem::remove(out_scheme_file);
     }
 
     static bool CompareCSV(const std::filesystem::path& file1, const std::filesystem::path& file2) {
@@ -66,12 +66,14 @@ TEST_F(TransformTest, CsvToColumnarAndBack_DefaultBatch) {
     {
         CSVToColumnarTransformer to_col(csv_file.string(), scheme_file.string(),
                                         columnar_file.string());
-        EXPECT_TRUE(to_col.Transform().has_value());
+        auto res = to_col.Transform();
+        ASSERT_TRUE(res.has_value()) << res.error();
     }
     {
         ColumnarToCSVTransformer to_csv(columnar_file.string(), out_scheme_file.string(),
                                         out_csv_file.string());
-        EXPECT_TRUE(to_csv.Transform().has_value());
+        auto res = to_csv.Transform();
+        ASSERT_TRUE(res.has_value()) << res.error();
     }
 
     EXPECT_TRUE(CompareCSV(csv_file, out_csv_file));
@@ -82,12 +84,14 @@ TEST_F(TransformTest, CsvToColumnarAndBack_SmallBatch) {
     {
         CSVToColumnarTransformer to_col(csv_file.string(), scheme_file.string(),
                                         columnar_file.string(), 1);
-        EXPECT_TRUE(to_col.Transform().has_value());
+        auto res = to_col.Transform();
+        ASSERT_TRUE(res.has_value()) << res.error();
     }
     {
         ColumnarToCSVTransformer to_csv(columnar_file.string(), out_scheme_file.string(),
                                         out_csv_file.string());
-        EXPECT_TRUE(to_csv.Transform().has_value());
+        auto res = to_csv.Transform();
+        ASSERT_TRUE(res.has_value()) << res.error();
     }
 
     EXPECT_TRUE(CompareCSV(csv_file, out_csv_file));
