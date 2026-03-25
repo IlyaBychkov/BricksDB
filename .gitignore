@@ -10,3 +10,5 @@ Testing
 .idea
 .pre-commit-config.yaml
 test_files
+build_RelWithDebInfo
+hits_files

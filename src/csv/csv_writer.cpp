@@ -38,7 +38,7 @@ std::expected<void, std::string> CSVWriter::WriteRow(const std::vector<std::stri
         crashed_ = true;
     }
     if (crashed_) {
-        return std::unexpected("File is not open");
+        return std::unexpected("CSVWriter::WriteRow: File is not open (" + filename_ + ")");
     }
 
     for (size_t i = 0; i < fields.size(); ++i) {
@@ -88,7 +88,7 @@ std::expected<void, std::string> CSVWriter::WriteRow(const std::vector<std::stri
 
     if (fout_.fail()) {
         crashed_ = true;
-        std::unexpected("Writer crashed");
+        return std::unexpected("CSVWriter::WriteRow: Writer crashed while writing to " + filename_);
     }
 
     return {};
@@ -97,7 +97,8 @@ std::expected<void, std::string> CSVWriter::WriteRow(const std::vector<std::stri
 std::expected<CSVWriter, std::string> CreateCSVWriter(const std::string& csv_filename) {
     CSVWriter writer(csv_filename);
     if (!writer.Open()) {
-        return std::unexpected("Failed to open CSV file for writing: " + csv_filename);
+        return std::unexpected("CreateCSVWriter: Failed to open CSV file for writing: " +
+                               csv_filename);
     }
     return writer;
 }

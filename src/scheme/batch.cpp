@@ -20,11 +20,21 @@ Batch::Batch(std::vector<Column>&& data, const Scheme& scheme)
 
 std::expected<void, std::string> Batch::Validate() const {
     if (data_.size() != scheme_.GetSize()) {
-        return std::unexpected("Column count mismatch");
+        return std::unexpected(
+            "Batch::Validate: Column count mismatch: data=" + std::to_string(data_.size()) +
+            ", scheme=" + std::to_string(scheme_.GetSize()));
     }
     for (size_t i = 0; i < data_.size(); ++i) {
-        if (data_[i].GetType() != scheme_.GetType(i) || data_[i].GetSize() != data_[0].GetSize()) {
-            return std::unexpected("Column data mismatch");
+        if (data_[i].GetType() != scheme_.GetType(i)) {
+            return std::unexpected("Batch::Validate: Type mismatch at index " + std::to_string(i) +
+                                   ": expected " + TypeToString(scheme_.GetType(i)) + ", but got " +
+                                   TypeToString(data_[i].GetType()));
+        }
+        if (data_[i].GetSize() != data_[0].GetSize()) {
+            return std::unexpected(
+                "Batch::Validate: Column size mismatch at index " + std::to_string(i) +
+                ": size is " + std::to_string(data_[i].GetSize()) + ", but first column size is " +
+                std::to_string(data_[0].GetSize()));
         }
     }
     return {};

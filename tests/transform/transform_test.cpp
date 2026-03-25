@@ -25,15 +25,17 @@ protected:
         out_scheme_file = tmp_dir / "test_scheme_res.csv";
 
         std::ofstream csv(csv_file);
-        csv << "1,2,first,4\n";
-        csv << "5,1,second,2\n";
-        csv << "8,17,third,2\n";
+        csv << "1,2,first,4,\"2013-07-14 20:38:47\",\"2013-07-15\"\n";
+        csv << "5,1,second,2,\"2013-03-18 00:59:47\",\"2025-01-15\"\n";
+        csv << "8,17,third,2,\"2000-07-14 20:55:59\",\"1972-12-01\"\n";
 
         std::ofstream scheme(scheme_file);
         scheme << "a,int64\n";
-        scheme << "b,int64\n";
+        scheme << "b,int32\n";
         scheme << "name123,string\n";
-        scheme << "d,int64\n";
+        scheme << "d,int16\n";
+        scheme << "e,timestamp\n";
+        scheme << "f,date\n";
     }
 
     void TearDown() override {
@@ -66,12 +68,14 @@ TEST_F(TransformTest, CsvToColumnarAndBack_DefaultBatch) {
     {
         CSVToColumnarTransformer to_col(csv_file.string(), scheme_file.string(),
                                         columnar_file.string());
-        EXPECT_TRUE(to_col.Transform().has_value());
+        auto res = to_col.Transform();
+        ASSERT_TRUE(res.has_value()) << res.error();
     }
     {
         ColumnarToCSVTransformer to_csv(columnar_file.string(), out_scheme_file.string(),
                                         out_csv_file.string());
-        EXPECT_TRUE(to_csv.Transform().has_value());
+        auto res = to_csv.Transform();
+        ASSERT_TRUE(res.has_value()) << res.error();
     }
 
     EXPECT_TRUE(CompareCSV(csv_file, out_csv_file));
@@ -82,12 +86,14 @@ TEST_F(TransformTest, CsvToColumnarAndBack_SmallBatch) {
     {
         CSVToColumnarTransformer to_col(csv_file.string(), scheme_file.string(),
                                         columnar_file.string(), 1);
-        EXPECT_TRUE(to_col.Transform().has_value());
+        auto res = to_col.Transform();
+        ASSERT_TRUE(res.has_value()) << res.error();
     }
     {
         ColumnarToCSVTransformer to_csv(columnar_file.string(), out_scheme_file.string(),
                                         out_csv_file.string());
-        EXPECT_TRUE(to_csv.Transform().has_value());
+        auto res = to_csv.Transform();
+        ASSERT_TRUE(res.has_value()) << res.error();
     }
 
     EXPECT_TRUE(CompareCSV(csv_file, out_csv_file));

@@ -21,12 +21,16 @@ CSVToColumnarTransformer::~CSVToColumnarTransformer() {
 std::expected<void, std::string> CSVToColumnarTransformer::Prepare() {
     auto tmp = CreateCSVBatcher(csv_filename_, scheme_filename_, batch_max_size_);
     if (!tmp) {
-        return std::unexpected(tmp.error());
+        return std::unexpected(
+            std::string("CSVToColumnarTransformer::Prepare: CreateCSVBatcher failed for csv='") +
+            csv_filename_ + "' scheme='" + scheme_filename_ + "': " + tmp.error());
     }
     batcher_ = std::move(tmp.value());
     fout_.open(columnar_filename_, std::ios::binary);
     if (!fout_.is_open()) {
-        return std::unexpected("Failed to open columnar file");
+        return std::unexpected(
+            std::string("CSVToColumnarTransformer::Prepare: Failed to open columnar file '") +
+            columnar_filename_ + "'");
     }
     return {};
 }
@@ -42,23 +46,32 @@ std::expected<void, std::string> CSVToColumnarTransformer::Transform() {
     while (batcher_.HasNextBatch()) {
         auto batch_tmp = batcher_.NextBatch();
         if (!batch_tmp) {
-            return std::unexpected(batch_tmp.error());
+            return std::unexpected(
+                std::string("CSVToColumnarTransformer::Transform: CSVBatcher NextBatch failed: ") +
+                batch_tmp.error());
         }
         Batch batch = std::move(*batch_tmp);
         metadata.AddRowGroup(fout_.tellp(), batch.RowsCnt());
         auto res = WriteBatch(batch);
         if (!res) {
-            return std::unexpected(res.error());
+            return std::unexpected(std::string("CSVToColumnarTransformer::Transform: WriteBatch "
+                                               "failed while processing batch at offset ") +
+                                   std::to_string(static_cast<long long>(fout_.tellp())) + ": " +
+                                   res.error());
         }
     }
 
     auto res = WriteMetadataToFile(metadata, fout_);
     if (!res) {
-        return std::unexpected(res.error());
+        return std::unexpected(
+            std::string("CSVToColumnarTransformer::Transform: WriteMetadataToFile failed for '") +
+            columnar_filename_ + "': " + res.error());
     }
 
     if (batcher_.IsCrashed()) {
-        return std::unexpected("Batcher crashed during transformation");
+        return std::unexpected(std::string("CSVToColumnarTransformer::Transform: Batcher crashed "
+                                           "during transformation for csv='") +
+                               csv_filename_ + "'");
     }
     return {};
 }

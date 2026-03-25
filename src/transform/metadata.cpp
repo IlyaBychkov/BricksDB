@@ -55,7 +55,8 @@ std::expected<void, std::string> WriteMetadataToFile(Metadata metadata, std::ost
         sum += sizeof(int64_t);
         fout.write(reinterpret_cast<char*>(&sum), sizeof(int64_t));
     } catch (...) {
-        return std::unexpected("Failed to write metadata to file");
+        return std::unexpected(
+            std::string("WriteMetadataToFile: Failed to write metadata to output stream"));
     }
     return {};
 }
@@ -97,6 +98,7 @@ std::expected<Metadata, std::string> ReadMetadataFromFile(std::istream& fin) {
                  row_groups * sizeof(int64_t));
         return metadata;
     } catch (...) {
-        return std::unexpected("Failed to read metadata from file");
+        return std::unexpected(
+            std::string("ReadMetadataFromFile: Failed to read metadata from input stream"));
     }
 }
