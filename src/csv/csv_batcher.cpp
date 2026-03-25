@@ -1,8 +1,8 @@
 #include "csv/csv_batcher.h"
 
 #include <chrono>
+#include <ctime>
 #include <expected>
-#include <sstream>
 
 std::expected<CSVBatcher, std::string> CreateCSVBatcher(const std::string& csv_filename,
                                                         const std::string& scheme_file,
@@ -68,23 +68,33 @@ std::expected<Batch, std::string> CSVBatcher::NextBatch() {
                 columns[i].Push<std::string>(row[i]);
                 current_batch_size += row[i].size();
             } else if (t == Type::timestamp) {
-                std::chrono::sys_seconds ts;
-                std::istringstream ss(row[i]);
-                ss >> std::chrono::parse("%Y-%m-%d %H:%M:%S", ts);
-                if (ss.fail()) {
+                int y, m, d, hh, mm, ss;
+                if (std::sscanf(row[i].c_str(), "%d-%d-%d %d:%d:%d", &y, &m, &d, &hh, &mm, &ss) !=
+                    6) {
                     return std::unexpected(
-                        std::string("CSVBatcher::NextBatch: Failed to parse timestamp: ") + row[i]);
+                        "CSVBatcher::NextBatch: Failed to parse timestamp (format mismatch): " +
+                        row[i]);
                 }
+                auto ymd = std::chrono::year(y) / m / d;
+                if (!ymd.ok()) {
+                    return std::unexpected("CSVBatcher::NextBatch: Invalid date in timestamp: " +
+                                           row[i]);
+                }
+                std::chrono::sys_seconds ts = std::chrono::sys_days{ymd} + std::chrono::hours(hh) +
+                                              std::chrono::minutes(mm) + std::chrono::seconds(ss);
                 columns[i].Push<int64_t>(static_cast<int64_t>(ts.time_since_epoch().count()));
                 current_batch_size += sizeof(int64_t);
             } else if (t == Type::date) {
-                std::chrono::sys_days dt;
-                std::istringstream ss(row[i]);
-                ss >> std::chrono::parse("%Y-%m-%d", dt);
-                if (ss.fail()) {
-                    return std::unexpected(
-                        std::string("CSVBatcher::NextBatch: Failed to parse date: ") + row[i]);
+                int y, m, d;
+                if (std::sscanf(row[i].c_str(), "%d-%d-%d", &y, &m, &d) != 3) {
+                    return std::unexpected("CSVBatcher::NextBatch: Failed to parse date: " +
+                                           row[i]);
                 }
+                auto ymd = std::chrono::year(y) / m / d;
+                if (!ymd.ok()) {
+                    return std::unexpected("CSVBatcher::NextBatch: Invalid date: " + row[i]);
+                }
+                auto dt = std::chrono::sys_days{ymd};
                 columns[i].Push<int32_t>(static_cast<int32_t>(dt.time_since_epoch().count()));
                 current_batch_size += sizeof(int32_t);
             } else {
