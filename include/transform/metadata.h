@@ -16,6 +16,8 @@ public:
     std::vector<int64_t>& GetOffsets();
     std::vector<int64_t>& GetRowsCnt();
 
+    size_t BatchesCnt() const;
+
 private:
     Scheme scheme_;
     std::vector<int64_t> offsets_;

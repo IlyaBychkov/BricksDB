@@ -22,6 +22,10 @@ std::vector<int64_t>& Metadata::GetRowsCnt() {
     return rows_;
 }
 
+size_t Metadata::BatchesCnt() const {
+    return offsets_.size();
+}
+
 std::expected<void, std::string> WriteMetadataToFile(Metadata metadata, std::ostream& fout) {
     try {
         int64_t sum = 0;

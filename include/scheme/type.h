@@ -7,3 +7,5 @@ enum class Type { int64 = 0, string = 1, int16 = 2, int32 = 3, timestamp = 4, da
 
 std::expected<Type, std::string> StringToType(const std::string& type_str);
 std::string TypeToString(Type type);
+
+size_t TypeSizeof(Type type);
