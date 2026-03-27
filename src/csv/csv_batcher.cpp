@@ -12,7 +12,7 @@ std::expected<CSVBatcher, std::string> CreateCSVBatcher(const std::string& csv_f
         return std::unexpected("CreateCSVBatcher: CreateCSVReader failed for '" + csv_filename +
                                "': " + reader.error());
     }
-    auto scheme = CreateSchemeFromFile(scheme_file);
+    auto scheme = CreateSchemeFromCSV(scheme_file);
     if (!scheme.has_value()) {
         return std::unexpected("CreateCSVBatcher: CreateSchemeFromFile failed for '" + scheme_file +
                                "': " + scheme.error());

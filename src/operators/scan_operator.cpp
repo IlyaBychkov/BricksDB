@@ -6,8 +6,9 @@
 
 #include "scheme/batch.h"
 #include "scheme/type.h"
+#include "transform/metadata.h"
 
-ScanOperator::ScanOperator(const std::string& filename, std::set<std::string>& columns)
+ScanOperator::ScanOperator(const std::string& filename, const std::set<std::string>& columns)
     : columns_(columns) {
     fin_.open(filename, std::ios::binary);
     if (!fin_.is_open()) {

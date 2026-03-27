@@ -4,7 +4,6 @@
 #include <string>
 
 #include "csv/csv_writer.h"
-#include "scheme/batch.h"
 
 struct ColumnarToCSVTransformer {
 public:
@@ -23,5 +22,4 @@ private:
     CSVWriter csv_out_;
 
     std::expected<void, std::string> Prepare();
-    std::expected<void, std::string> WriteBatchToCSV(const Batch& batch);
 };

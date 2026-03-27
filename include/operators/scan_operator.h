@@ -1,3 +1,5 @@
+#pragma once
+
 #include <fstream>
 #include <optional>
 #include <set>
@@ -7,7 +9,7 @@
 
 class ScanOperator : public IOperator {
 public:
-    ScanOperator(const std::string& filename, std::set<std::string>& columns);
+    ScanOperator(const std::string& filename, const std::set<std::string>& columns);
     ~ScanOperator();
 
     std::optional<Batch> Next() override;

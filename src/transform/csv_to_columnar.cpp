@@ -1,5 +1,7 @@
 #include "transform/csv_to_columnar.h"
 
+#include <iostream>
+
 #include "transform/metadata.h"
 
 CSVToColumnarTransformer::CSVToColumnarTransformer(const std::string& csv_filename,

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <optional>
 
 #include "scheme/batch.h"

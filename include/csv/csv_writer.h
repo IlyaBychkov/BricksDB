@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "../scheme/batch.h"
+
 class CSVWriter {
 public:
     CSVWriter() = default;
@@ -22,6 +24,8 @@ public:
 
     std::expected<void, std::string> WriteRow(const std::vector<std::string>& fields,
                                               bool need_flush = false);
+
+    std::expected<void, std::string> WriteBatch(const Batch& batch);
 
 private:
     std::string filename_;

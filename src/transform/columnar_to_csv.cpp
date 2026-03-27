@@ -1,14 +1,10 @@
 #include "transform/columnar_to_csv.h"
 
-#include <chrono>
 #include <expected>
-#include <format>
 #include <string>
 
 #include "scheme/batch.h"
-#include "scheme/column.h"
 #include "scheme/scheme.h"
-#include "scheme/type.h"
 #include "transform/metadata.h"
 
 ColumnarToCSVTransformer::ColumnarToCSVTransformer(const std::string& columnar_filename,
@@ -59,7 +55,7 @@ std::expected<void, std::string> ColumnarToCSVTransformer::Transform() {
     Metadata metadata = *metadata_res;
 
     Scheme scheme = metadata.GetScheme();
-    WriteSchemeToFile(scheme, scheme_filename_);
+    WriteSchemeToCSV(scheme, scheme_filename_);
 
     std::vector<int64_t>& offsets = metadata.GetOffsets();
     std::vector<int64_t>& rows = metadata.GetRowsCnt();
@@ -74,7 +70,7 @@ std::expected<void, std::string> ColumnarToCSVTransformer::Transform() {
                 std::to_string(offsets[i]) + ": " + batch_tmp.error());
         }
         Batch batch = std::move(*batch_tmp);
-        auto res = WriteBatchToCSV(batch);
+        auto res = csv_out_.WriteBatch(batch);
         if (!res) {
             return std::unexpected(
                 std::string("ColumnarToCSVTransformer::Transform: WriteBatchToCSV failed while "
@@ -87,53 +83,5 @@ std::expected<void, std::string> ColumnarToCSVTransformer::Transform() {
         return std::unexpected("CSVWriter crashed");
     }
 
-    return {};
-}
-
-std::expected<void, std::string> ColumnarToCSVTransformer::WriteBatchToCSV(const Batch& batch) {
-    for (size_t i = 0; i < batch.RowsCnt(); ++i) {
-        std::vector<std::string> row;
-        for (size_t c = 0; c < batch.ColumnsCnt(); ++c) {
-            Type t = batch.GetColumnType(c);
-            if (t == Type::int64) {
-                const auto& val = batch.GetColumn(c).GetValue<int64_t>(i);
-                row.push_back(std::to_string(val));
-            } else if (t == Type::int32) {
-                const auto& val = batch.GetColumn(c).GetValue<int32_t>(i);
-                row.push_back(std::to_string(val));
-            } else if (t == Type::int16) {
-                const auto& val = batch.GetColumn(c).GetValue<int16_t>(i);
-                row.push_back(std::to_string(val));
-            } else if (t == Type::string) {
-                const auto& val = batch.GetColumn(c).GetValue<std::string>(i);
-                row.push_back(val);
-            } else if (t == Type::timestamp) {
-                const auto& val = batch.GetColumn(c).GetValue<int64_t>(i);
-                std::chrono::sys_seconds ts{std::chrono::seconds{val}};
-                row.push_back(std::format("{:%F %T}", ts));
-            } else if (t == Type::date) {
-                const auto& val = batch.GetColumn(c).GetValue<int32_t>(i);
-                std::chrono::sys_days dt{std::chrono::days{val}};
-                row.push_back(std::format("{:%F}", dt));
-            } else {
-                return std::unexpected(std::string("ColumnarToCSVTransformer::WriteBatchToCSV: "
-                                                   "Unsupported column type at column ") +
-                                       std::to_string(c));
-            }
-        }
-        auto res = csv_out_.WriteRow(row);
-        if (!res) {
-            return std::unexpected(
-                std::string(
-                    "ColumnarToCSVTransformer::WriteBatchToCSV: CSVWriter WriteRow failed: ") +
-                res.error());
-        }
-    }
-    if (csv_out_.IsCrashed()) {
-        return std::unexpected(
-            std::string(
-                "ColumnarToCSVTransformer::WriteBatchToCSV: CSVWriter crashed while writing to '") +
-            csv_filename_ + "'");
-    }
     return {};
 }
