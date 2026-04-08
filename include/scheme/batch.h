@@ -34,7 +34,7 @@ public:
     std::vector<Column>& GetAllColumns();
     const std::vector<Column>& GetAllColumns() const;
 
-    Column& GetColumn(const std::string& name);
+    Column GetColumn(const std::string& name) const;
 
     void AddColumn(const Column& columnn, const SchemeElement& se);
 

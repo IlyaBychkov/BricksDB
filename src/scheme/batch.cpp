@@ -82,7 +82,7 @@ const std::vector<Column>& Batch::GetAllColumns() const {
     return data_;
 }
 
-Column& Batch::GetColumn(const std::string& name) {
+Column Batch::GetColumn(const std::string& name) const {
     for (size_t i = 0; i < ColumnsCnt(); ++i) {
         if (GetColumnName(i) == name) {
             return data_[i];
