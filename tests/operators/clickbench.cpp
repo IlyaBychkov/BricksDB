@@ -55,8 +55,8 @@ TEST_F(ClickBenchTest, Query0) {
 }
 
 TEST_F(ClickBenchTest, Query1) {
-    auto scan_ptr =
-        std::make_unique<ScanOperator>(hits_file.string(), std::set<std::string>{"AdvEngineID"});
+    std::set<std::string> cols = {"AdvEngineID"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
 
     auto filter_ptr = std::make_unique<FilterOperator>(
         std::move(scan_ptr),
@@ -68,4 +68,27 @@ TEST_F(ClickBenchTest, Query1) {
     auto agg_ptr = std::make_unique<AggregationOperator>(std::move(filter_ptr), aggs);
 
     ExecuteAndVerify(std::move(agg_ptr), 1);
+}
+
+TEST_F(ClickBenchTest, Query2) {
+    std::set<std::string> cols = {"AdvEngineID", "ResolutionWidth"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    std::vector<std::pair<AggregationType, std::string>> aggs = {
+        {AggregationType::SUM, "AdvEngineID"},
+        {AggregationType::COUNT, "AdvEngineID"},
+        {AggregationType::AVG, "ResolutionWidth"}};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), aggs);
+
+    ExecuteAndVerify(std::move(agg_ptr), 2);
+}
+
+TEST_F(ClickBenchTest, Query3) {
+    std::set<std::string> cols = {"UserID"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    std::vector<std::pair<AggregationType, std::string>> aggs = {{AggregationType::AVG, "UserID"}};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), aggs);
+
+    ExecuteAndVerify(std::move(agg_ptr), 3);
 }
