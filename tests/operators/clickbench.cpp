@@ -127,3 +127,20 @@ TEST_F(ClickBenchTest, Query6) {
 
     ExecuteAndVerify(std::move(agg_ptr), 6);
 }
+
+TEST_F(ClickBenchTest, Query7) {
+    std::set<std::string> cols = {"AdvEngineID"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    auto expr_ptr = std::make_unique<CompareExpression<std::not_equal_to<int16_t>, int16_t>>(
+        "AdvEngineID", static_cast<int16_t>(0));
+    auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr_ptr));
+
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<CountState>(), "AdvEngineID");
+    std::vector<std::string> group_columns_names = {"AdvEngineID"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(filter_ptr), std::move(states),
+                                                         std::move(group_columns_names));
+
+    ExecuteAndVerify(std::move(agg_ptr), 7);
+}
