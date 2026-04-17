@@ -7,6 +7,7 @@
 #include "expressions/cmp_expressions.h"
 #include "operators/aggregation_operator.h"
 #include "operators/filter_operator.h"
+#include "operators/limit_operator.h"
 #include "operators/scan_operator.h"
 #include "operators/sort_operator.h"
 #include "scheme/batch.h"
@@ -163,4 +164,24 @@ TEST_F(ClickBenchTest, Query7) {
     auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_columns));
 
     ExecuteAndVerify(std::move(sort_ptr), 7);
+}
+
+TEST_F(ClickBenchTest, Query8) {
+    std::set<std::string> cols = {"RegionID", "UserID"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<CountDistinctState<int64_t>>(Type::int64), "UserID");
+    std::vector<std::string> group_columns_names = {"RegionID"};
+    std::vector<std::string> res_names = {"COUNT(DISTINCT UserID)"};
+    auto agg_ptr =
+        std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states),
+                                              std::move(res_names), std::move(group_columns_names));
+
+    auto sort_columns = std::vector<std::pair<std::string, bool>>{{"COUNT(DISTINCT UserID)", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_columns));
+
+    auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+
+    ExecuteAndVerify(std::move(limit_ptr), 8);
 }
