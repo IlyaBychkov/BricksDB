@@ -1,1 +1,1 @@
-UserID,int64
+AVG(UserID),int64

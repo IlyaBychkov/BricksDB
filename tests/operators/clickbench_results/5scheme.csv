@@ -1,1 +1,1 @@
-SearchPhrase,int64
+COUNT(DISTINCT SearchPhrase),int64

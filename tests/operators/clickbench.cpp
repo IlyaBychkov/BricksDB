@@ -8,6 +8,7 @@
 #include "operators/aggregation_operator.h"
 #include "operators/filter_operator.h"
 #include "operators/scan_operator.h"
+#include "operators/sort_operator.h"
 #include "scheme/batch.h"
 #include "scheme/scheme.h"
 
@@ -49,7 +50,9 @@ TEST_F(ClickBenchTest, Query0) {
 
     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
     states.emplace_back(std::make_unique<CountState>(), "WatchID");
-    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states));
+    std::vector<std::string> res_names = {"COUNT(*)"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states),
+                                                         std::move(res_names));
 
     ExecuteAndVerify(std::move(agg_ptr), 0);
 }
@@ -64,7 +67,9 @@ TEST_F(ClickBenchTest, Query1) {
 
     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
     states.emplace_back(std::make_unique<CountState>(), "AdvEngineID");
-    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(filter_ptr), std::move(states));
+    std::vector<std::string> res_names = {"COUNT(*)"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(filter_ptr), std::move(states),
+                                                         std::move(res_names));
 
     ExecuteAndVerify(std::move(agg_ptr), 1);
 }
@@ -77,7 +82,9 @@ TEST_F(ClickBenchTest, Query2) {
     states.emplace_back(std::make_unique<SumState>(), "AdvEngineID");
     states.emplace_back(std::make_unique<CountState>(), "AdvEngineID");
     states.emplace_back(std::make_unique<AvgState>(), "ResolutionWidth");
-    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states));
+    std::vector<std::string> res_names = {"SUM(AdvEngineID)", "COUNT(*)", "AVG(ResolutionWidth)"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states),
+                                                         std::move(res_names));
 
     ExecuteAndVerify(std::move(agg_ptr), 2);
 }
@@ -88,7 +95,9 @@ TEST_F(ClickBenchTest, Query3) {
 
     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
     states.emplace_back(std::make_unique<AvgState>(), "UserID");
-    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states));
+    std::vector<std::string> res_names = {"AVG(UserID)"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states),
+                                                         std::move(res_names));
 
     ExecuteAndVerify(std::move(agg_ptr), 3);
 }
@@ -99,7 +108,9 @@ TEST_F(ClickBenchTest, Query4) {
 
     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
     states.emplace_back(std::make_unique<CountDistinctState<int64_t>>(Type::int64), "UserID");
-    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states));
+    std::vector<std::string> res_names = {"COUNT(DISTINCT UserID)"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states),
+                                                         std::move(res_names));
 
     ExecuteAndVerify(std::move(agg_ptr), 4);
 }
@@ -111,7 +122,9 @@ TEST_F(ClickBenchTest, Query5) {
     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
     states.emplace_back(std::make_unique<CountDistinctState<std::string>>(Type::string),
                         "SearchPhrase");
-    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states));
+    std::vector<std::string> res_names = {"COUNT(DISTINCT SearchPhrase)"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states),
+                                                         std::move(res_names));
 
     ExecuteAndVerify(std::move(agg_ptr), 5);
 }
@@ -123,7 +136,9 @@ TEST_F(ClickBenchTest, Query6) {
     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
     states.emplace_back(std::make_unique<MinState<int32_t>>(Type::date), "EventDate");
     states.emplace_back(std::make_unique<MaxState<int32_t>>(Type::date), "EventDate");
-    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states));
+    std::vector<std::string> res_names = {"MIN(EventDate)", "MAX(EventDate)"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(scan_ptr), std::move(states),
+                                                         std::move(res_names));
 
     ExecuteAndVerify(std::move(agg_ptr), 6);
 }
@@ -139,8 +154,13 @@ TEST_F(ClickBenchTest, Query7) {
     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
     states.emplace_back(std::make_unique<CountState>(), "AdvEngineID");
     std::vector<std::string> group_columns_names = {"AdvEngineID"};
-    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(filter_ptr), std::move(states),
-                                                         std::move(group_columns_names));
+    std::vector<std::string> res_names = {"COUNT(*)"};
+    auto agg_ptr =
+        std::make_unique<AggregationOperator>(std::move(filter_ptr), std::move(states),
+                                              std::move(res_names), std::move(group_columns_names));
 
-    ExecuteAndVerify(std::move(agg_ptr), 7);
+    auto sort_columns = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_columns));
+
+    ExecuteAndVerify(std::move(sort_ptr), 7);
 }

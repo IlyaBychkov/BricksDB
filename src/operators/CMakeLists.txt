@@ -8,3 +8,7 @@ target_link_libraries(aggregation_operator PUBLIC batch)
 add_library(filter_operator STATIC filter_operator.cpp)
 target_include_directories(filter_operator PUBLIC ${CMAKE_SOURCE_DIR}/include/)
 target_link_libraries(filter_operator PUBLIC batch)
+
+add_library(sort_operator STATIC sort_operator.cpp)
+target_include_directories(sort_operator PUBLIC ${CMAKE_SOURCE_DIR}/include/)
+target_link_libraries(sort_operator PUBLIC batch)

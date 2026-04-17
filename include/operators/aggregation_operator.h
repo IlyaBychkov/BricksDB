@@ -215,13 +215,14 @@ public:
     AggregationOperator(
         std::unique_ptr<IOperator> child,
         std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>>&& prototypes,
-        std::vector<std::string>&& group_columns_names = {});
+        std::vector<std::string>&& res_names, std::vector<std::string>&& group_columns_names = {});
 
     std::optional<Batch> Next() override;
 
 private:
     std::unique_ptr<IOperator> child_;
     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> prototypes_;
+    std::vector<std::string> res_names_;
     std::vector<std::string> group_columns_names_;
     std::unordered_map<GroupKey, std::vector<std::unique_ptr<AggregationState>>, GroupKeyHash>
         groups_;

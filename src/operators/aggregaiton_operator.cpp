@@ -105,9 +105,10 @@ std::unique_ptr<AggregationState> AvgState::Clone() {
 AggregationOperator::AggregationOperator(
     std::unique_ptr<IOperator> child,
     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>>&& prototypes,
-    std::vector<std::string>&& group_columns_names)
+    std::vector<std::string>&& res_names, std::vector<std::string>&& group_columns_names)
     : child_(std::move(child)),
       prototypes_(std::move(prototypes)),
+      res_names_(std::move(res_names)),
       group_columns_names_(std::move(group_columns_names)) {
 }
 
@@ -121,9 +122,10 @@ std::optional<Batch> AggregationOperator::Next() {
 
         Scheme scheme;
         std::vector<Column> columns;
-        for (auto& [agg_state, column_name] : prototypes_) {
+        for (size_t i = 0; i < prototypes_.size(); ++i) {
+            const auto& [agg_state, column_name] = prototypes_[i];
             Column col = agg_state->GetResult();
-            scheme.AddElement(SchemeElement(column_name, col.GetType()));
+            scheme.AddElement(SchemeElement(res_names_[i], col.GetType()));
             columns.push_back(col);
         }
 
@@ -177,9 +179,10 @@ std::optional<Batch> AggregationOperator::Next() {
         columns.emplace_back(keys_types[i]);
         scheme.AddElement(SchemeElement(group_columns_names_[i], keys_types[i]));
     }
-    for (auto& [agg_state, column_name] : prototypes_) {
+    for (size_t i = 0; i < prototypes_.size(); ++i) {
+        const auto& [agg_state, column_name] = prototypes_[i];
         Type type = agg_state->GetResult().GetType();
-        scheme.AddElement(SchemeElement(column_name, type));
+        scheme.AddElement(SchemeElement(res_names_[i], type));
         columns.emplace_back(type);
     }
 

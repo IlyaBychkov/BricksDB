@@ -1,2 +1,2 @@
-EventDate,date
-EventDate,date
+MIN(EventDate),date
+MAX(EventDate),date

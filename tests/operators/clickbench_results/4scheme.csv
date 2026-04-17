@@ -1,1 +1,1 @@
-UserID,int64
+COUNT(DISTINCT UserID),int64
