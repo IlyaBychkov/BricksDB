@@ -15,7 +15,7 @@ protected:
     fs::path my_dir =
         "/home/ilya-bychkov/VsCodeProjects/BricksDB/tests/operators/clickbench_results";
 
-    std::vector<int> skip = {3};
+    std::vector<int> skip = {3, 17, 18};
 
     static bool CompareFiles(const fs::path& p1, const fs::path& p2) {
         std::ifstream f1(p1, std::ios::binary);

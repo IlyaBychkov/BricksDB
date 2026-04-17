@@ -10,16 +10,32 @@ std::optional<Batch> LimitOperator::Next() {
         return std::nullopt;
     }
     Batch batch = std::move(*batch_opt);
-    size_t batch_size = batch.RowsCnt();
+
+    while (batch.RowsCnt() < limit_ + offset_) {
+        const auto& b_opt = child_->Next();
+        if (!b_opt.has_value()) {
+            break;
+        }
+
+        const auto& new_cols = b_opt->GetAllColumns();
+        for (size_t i = 0; i < batch.ColumnsCnt(); ++i) {
+            std::visit(
+                [&]<typename T>(std::vector<T>& vec) {
+                    const auto& new_vec = std::get<std::vector<T>>(new_cols[i].Value());
+                    vec.insert(std::end(vec), std::begin(new_vec), std::end(new_vec));
+                },
+                batch.GetColumn(i).Value());
+        }
+    }
 
     auto& cols = batch.GetAllColumns();
     for (auto& col : cols) {
         std::visit(
             [&]<typename T>(std::vector<T>& vec) {
-                size_t size = std::min(limit_, batch_size - offset_);
-                std::move(vec.begin() + offset_, vec.begin() + offset_ + size, vec.begin());
-                vec.resize(size);
-                vec.shrink_to_fit();
+                vec.erase(vec.begin(), vec.begin() + offset_);
+                if (vec.size() > limit_) {
+                    vec.resize(limit_);
+                }
             },
             col.Value());
     }

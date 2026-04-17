@@ -14,6 +14,12 @@ struct ContainsOp {
     }
 };
 
+struct NotContainsOp {
+    inline bool operator()(const std::string& text, const std::string& pattern) const {
+        return !text.contains(pattern);
+    }
+};
+
 template <typename Operation, typename T>
 class CompareExpression : public BoolExpression {
 public:

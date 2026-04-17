@@ -1,0 +1,3 @@
+SearchEngineID,int16
+SearchPhrase,string
+COUNT(*),int64

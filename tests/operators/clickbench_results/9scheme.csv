@@ -1,0 +1,5 @@
+RegionID,int32
+SUM(AdvEngineID),int64
+COUNT(*),int64
+AVG(ResolutionWidth),int64
+COUNT(DISTINCT UserID),int64
