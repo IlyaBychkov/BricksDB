@@ -11,11 +11,23 @@ SortOperator::SortOperator(std::unique_ptr<IOperator> child,
 }
 
 std::optional<Batch> SortOperator::Next() {
-    auto batch_opt = child_->Next();
-    if (!batch_opt.has_value()) {
+    std::optional<Batch> first_batch_opt = child_->Next();
+    if (!first_batch_opt.has_value()) {
         return std::nullopt;
     }
-    Batch batch = std::move(*batch_opt);
+
+    Batch batch = std::move(*first_batch_opt);
+    while (auto b_opt = child_->Next()) {
+        const auto& new_cols = b_opt->GetAllColumns();
+        for (size_t i = 0; i < batch.ColumnsCnt(); ++i) {
+            std::visit(
+                [&]<typename T>(std::vector<T>& vec) {
+                    const auto& new_vec = std::get<std::vector<T>>(new_cols[i].Value());
+                    vec.insert(std::end(vec), std::begin(new_vec), std::end(new_vec));
+                },
+                batch.GetColumn(i).Value());
+        }
+    }
 
     std::vector<size_t> indices(batch.RowsCnt());
     std::iota(indices.begin(), indices.end(), 0);

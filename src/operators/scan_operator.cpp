@@ -43,7 +43,7 @@ std::optional<Batch> ScanOperator::Next() {
         std::string column_name = scheme.GetName(i);
         Type column_type = scheme.GetType(i);
         int64_t rows_cnt = metadata_.GetRowsCnt()[batch_num_];
-        if (!columns_.contains(column_name)) {
+        if (!columns_.empty() && !columns_.contains(column_name)) {
             if (column_type == Type::string) {
                 int64_t total = 0;
                 fin_.read(reinterpret_cast<char*>(&total), sizeof(total));

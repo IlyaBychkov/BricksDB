@@ -454,3 +454,18 @@ TEST_F(ClickBenchTest, Query22) {
 
     ExecuteAndVerify(std::move(limit_ptr), 22);
 }
+
+TEST_F(ClickBenchTest, Query23) {
+    // SELECT * FROM hits WHERE URL LIKE '%google%' ORDER BY EventTime LIMIT 10;
+    std::set<std::string> cols;
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    auto expr = std::make_unique<CompareExpression<ContainsOp, std::string>>("URL", "google");
+    auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"EventTime", false}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(filter_ptr), std::move(sort_cols));
+    auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+
+    ExecuteAndVerify(std::move(limit_ptr), 23);
+}
