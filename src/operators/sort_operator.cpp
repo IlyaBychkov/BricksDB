@@ -13,7 +13,7 @@ SortOperator::SortOperator(std::unique_ptr<IOperator> child,
 std::optional<Batch> SortOperator::Next() {
     auto batch_opt = child_->Next();
     if (!batch_opt.has_value()) {
-        throw std::runtime_error("SortOperator: no more batches to sort");
+        return std::nullopt;
     }
     Batch batch = std::move(*batch_opt);
 

@@ -129,6 +129,10 @@ std::optional<Batch> AggregationOperator::Next() {
             columns.push_back(col);
         }
 
+        if (columns.empty() || columns[0].GetSize() == 0) {
+            return std::nullopt;
+        }
+
         return Batch(std::move(columns), std::move(scheme));
     }
 
@@ -197,6 +201,10 @@ std::optional<Batch> AggregationOperator::Next() {
                                   agg_state->GetResult().Value());
             std::visit([col = &columns[key.size() + i]](const auto& val) { col->Push(val); }, val);
         }
+    }
+
+    if (columns.empty() || columns[0].GetSize() == 0) {
+        return std::nullopt;
     }
 
     return Batch(std::move(columns), std::move(scheme));

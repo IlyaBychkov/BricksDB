@@ -397,64 +397,60 @@ TEST_F(ClickBenchTest, Query20) {
     ExecuteAndVerify(std::move(agg_ptr), 20);
 }
 
-// TEST_F(ClickBenchTest, Query21) {
-//     std::set<std::string> cols = {"URL", "SearchPhrase"};
-//     auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+TEST_F(ClickBenchTest, Query21) {
+    std::set<std::string> cols = {"URL", "SearchPhrase"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
 
-//     auto expr1 = std::make_unique<CompareExpression<std::not_equal_to<std::string>,
-//     std::string>>(
-//         "SearchPhrase", "");
-//     auto filter1 = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr1));
+    auto expr1 = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
+        "SearchPhrase", "");
+    auto filter1 = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr1));
 
-//     auto expr2 = std::make_unique<CompareExpression<ContainsOp, std::string>>("URL", "google");
-//     auto filter2 = std::make_unique<FilterOperator>(std::move(filter1), std::move(expr2));
+    auto expr2 = std::make_unique<CompareExpression<ContainsOp, std::string>>("URL", "google");
+    auto filter2 = std::make_unique<FilterOperator>(std::move(filter1), std::move(expr2));
 
-//     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
-//     states.emplace_back(std::make_unique<MinState<std::string>>(Type::string), "URL");
-//     states.emplace_back(std::make_unique<CountState>(), "SearchPhrase");
-//     std::vector<std::string> res_names = {"MIN(URL)", "COUNT(*)"};
-//     std::vector<std::string> group_cols = {"SearchPhrase"};
-//     auto agg_ptr = std::make_unique<AggregationOperator>(
-//         std::move(filter2), std::move(states), std::move(res_names), std::move(group_cols));
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<MinState<std::string>>(Type::string), "URL");
+    states.emplace_back(std::make_unique<CountState>(), "SearchPhrase");
+    std::vector<std::string> res_names = {"MIN(URL)", "COUNT(*)"};
+    std::vector<std::string> group_cols = {"SearchPhrase"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(
+        std::move(filter2), std::move(states), std::move(res_names), std::move(group_cols));
 
-//     auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
-//     auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols));
-//     auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols));
+    auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
 
-//     ExecuteAndVerify(std::move(limit_ptr), 21);
-// }
+    ExecuteAndVerify(std::move(limit_ptr), 21);
+}
 
-// TEST_F(ClickBenchTest, Query22) {
-//     std::set<std::string> cols = {"Title", "URL", "SearchPhrase", "UserID"};
-//     auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+TEST_F(ClickBenchTest, Query22) {
+    std::set<std::string> cols = {"Title", "URL", "SearchPhrase", "UserID"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
 
-//     auto expr1 = std::make_unique<CompareExpression<std::not_equal_to<std::string>,
-//     std::string>>(
-//         "SearchPhrase", "");
-//     auto filter1 = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr1));
+    auto expr1 = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
+        "SearchPhrase", "");
+    auto filter1 = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr1));
 
-//     auto expr2 = std::make_unique<CompareExpression<ContainsOp, std::string>>("Title", "Google");
-//     auto filter2 = std::make_unique<FilterOperator>(std::move(filter1), std::move(expr2));
+    auto expr2 = std::make_unique<CompareExpression<ContainsOp, std::string>>("Title", "Google");
+    auto filter2 = std::make_unique<FilterOperator>(std::move(filter1), std::move(expr2));
 
-//     auto expr3 = std::make_unique<CompareExpression<NotContainsOp, std::string>>("URL",
-//     ".google."); auto filter3 = std::make_unique<FilterOperator>(std::move(filter2),
-//     std::move(expr3));
+    auto expr3 = std::make_unique<CompareExpression<NotContainsOp, std::string>>("URL", ".google.");
+    auto filter3 = std::make_unique<FilterOperator>(std::move(filter2), std::move(expr3));
 
-//     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
-//     states.emplace_back(std::make_unique<MinState<std::string>>(Type::string), "URL");
-//     states.emplace_back(std::make_unique<MinState<std::string>>(Type::string), "Title");
-//     states.emplace_back(std::make_unique<CountState>(), "SearchPhrase");
-//     states.emplace_back(std::make_unique<CountDistinctState<int64_t>>(Type::int64), "UserID");
-//     std::vector<std::string> res_names = {"MIN(URL)", "MIN(Title)", "COUNT(*)",
-//                                           "COUNT(DISTINCT UserID)"};
-//     std::vector<std::string> group_cols = {"SearchPhrase"};
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<MinState<std::string>>(Type::string), "URL");
+    states.emplace_back(std::make_unique<MinState<std::string>>(Type::string), "Title");
+    states.emplace_back(std::make_unique<CountState>(), "SearchPhrase");
+    states.emplace_back(std::make_unique<CountDistinctState<int64_t>>(Type::int64), "UserID");
+    std::vector<std::string> res_names = {"MIN(URL)", "MIN(Title)", "COUNT(*)",
+                                          "COUNT(DISTINCT UserID)"};
+    std::vector<std::string> group_cols = {"SearchPhrase"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(
+        std::move(filter3), std::move(states), std::move(res_names), std::move(group_cols));
 
-//     auto agg_ptr = std::make_unique<AggregationOperator>(
-//         std::move(filter3), std::move(states), std::move(res_names), std::move(group_cols));
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols));
+    auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
 
-//     auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
-//     auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols));
-//     auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
-
-//     ExecuteAndVerify(std::move(limit_ptr), 22);
-// }
+    ExecuteAndVerify(std::move(limit_ptr), 22);
+}
