@@ -424,6 +424,10 @@ TEST_F(ClickBenchTest, Query21) {
 }
 
 TEST_F(ClickBenchTest, Query22) {
+    // SELECT SearchPhrase, MIN(URL), MIN(Title), COUNT(*) AS c, COUNT(DISTINCT UserID) FROM hits
+    // WHERE Title LIKE '%Google%' AND URL NOT LIKE '%.google.%' AND SearchPhrase <> '' GROUP BY
+    // SearchPhrase ORDER BY c DESC LIMIT 10;
+
     std::set<std::string> cols = {"Title", "URL", "SearchPhrase", "UserID"};
     auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
 
@@ -452,7 +456,10 @@ TEST_F(ClickBenchTest, Query22) {
     auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols));
     auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
 
-    ExecuteAndVerify(std::move(limit_ptr), 22);
+    auto sort_cols2 = std::vector<std::pair<std::string, bool>>{{"COUNT(DISTINCT UserID)", true}};
+    auto sort_ptr2 = std::make_unique<SortOperator>(std::move(limit_ptr), std::move(sort_cols));
+
+    ExecuteAndVerify(std::move(sort_ptr2), 22);
 }
 
 TEST_F(ClickBenchTest, Query23) {
@@ -469,3 +476,166 @@ TEST_F(ClickBenchTest, Query23) {
 
     ExecuteAndVerify(std::move(limit_ptr), 23);
 }
+
+TEST_F(ClickBenchTest, Query24) {
+    // SELECT SearchPhrase FROM hits WHERE SearchPhrase <> '' ORDER BY EventTime LIMIT 10;
+    std::set<std::string> cols = {"SearchPhrase", "EventTime"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    auto expr = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
+        "SearchPhrase", "");
+    auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"EventTime", false}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(filter_ptr), std::move(sort_cols));
+    auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+
+    ExecuteAndVerify(std::move(limit_ptr), 24);
+}
+
+// TOO SLOW
+// TEST_F(ClickBenchTest, Query25) {
+//     // SELECT SearchPhrase FROM hits WHERE SearchPhrase <> '' ORDER BY SearchPhrase LIMIT 10;
+//     std::set<std::string> cols = {"SearchPhrase"};
+//     auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+//     auto expr = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
+//         "SearchPhrase", "");
+//     auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
+
+//     auto sort_cols = std::vector<std::pair<std::string, bool>>{{"SearchPhrase", false}};
+//     auto sort_ptr = std::make_unique<SortOperator>(std::move(filter_ptr), std::move(sort_cols));
+//     auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+
+//     ExecuteAndVerify(std::move(limit_ptr), 25);
+// }
+
+// TOO SLOW
+// TEST_F(ClickBenchTest, Query26) {
+//     // SELECT SearchPhrase FROM hits WHERE SearchPhrase <> '' ORDER BY EventTime, SearchPhrase
+//     LIMIT
+//     // 10;
+//     std::set<std::string> cols = {"SearchPhrase", "EventTime"};
+//     auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+//     auto expr = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
+//         "SearchPhrase", "");
+//     auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
+
+//     auto sort_cols =
+//         std::vector<std::pair<std::string, bool>>{{"EventTime", false}, {"SearchPhrase", false}};
+//     auto sort_ptr = std::make_unique<SortOperator>(std::move(filter_ptr), std::move(sort_cols));
+//     auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+
+//     ExecuteAndVerify(std::move(limit_ptr), 26);
+// }
+
+TEST_F(ClickBenchTest, Query30) {
+    // SELECT SearchEngineID, ClientIP, COUNT(*) AS c, SUM(IsRefresh), AVG(ResolutionWidth)
+    // FROM hits WHERE SearchPhrase <> '' GROUP BY SearchEngineID, ClientIP ORDER BY c DESC LIMIT
+    // 10;
+    std::set<std::string> cols = {"SearchEngineID", "ClientIP", "SearchPhrase", "IsRefresh",
+                                  "ResolutionWidth"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    auto expr = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
+        "SearchPhrase", "");
+    auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
+
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<CountState>(), "SearchEngineID");
+    states.emplace_back(std::make_unique<SumState>(), "IsRefresh");
+    states.emplace_back(std::make_unique<AvgState>(), "ResolutionWidth");
+
+    std::vector<std::string> group_cols = {"SearchEngineID", "ClientIP"};
+    std::vector<std::string> res_names = {"COUNT(*)", "SUM(IsRefresh)", "AVG(ResolutionWidth)"};
+
+    auto agg_ptr = std::make_unique<AggregationOperator>(
+        std::move(filter_ptr), std::move(states), std::move(res_names), std::move(group_cols));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols));
+    auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+
+    auto sort_cols2 = std::vector<std::pair<std::string, bool>>{
+        {"COUNT(*)", true}, {"SearchEngineID", false}, {"AVG(ResolutionWidth)", false}};
+    auto sort_ptr2 = std::make_unique<SortOperator>(std::move(limit_ptr), std::move(sort_cols2));
+
+    ExecuteAndVerify(std::move(sort_ptr2), 30);
+}
+
+TEST_F(ClickBenchTest, Query31) {
+    // SELECT WatchID, ClientIP, COUNT(*) AS c, SUM(IsRefresh), AVG(ResolutionWidth)
+    // FROM hits WHERE SearchPhrase <> '' GROUP BY WatchID, ClientIP ORDER BY c DESC LIMIT 10;
+    std::set<std::string> cols = {"WatchID", "ClientIP", "SearchPhrase", "IsRefresh",
+                                  "ResolutionWidth"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    auto expr = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
+        "SearchPhrase", "");
+    auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
+
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<CountState>(), "WatchID");
+    states.emplace_back(std::make_unique<SumState>(), "IsRefresh");
+    states.emplace_back(std::make_unique<AvgState>(), "ResolutionWidth");
+
+    std::vector<std::string> group_cols = {"WatchID", "ClientIP"};
+    std::vector<std::string> res_names = {"COUNT(*)", "SUM(IsRefresh)", "AVG(ResolutionWidth)"};
+
+    auto agg_ptr = std::make_unique<AggregationOperator>(
+        std::move(filter_ptr), std::move(states), std::move(res_names), std::move(group_cols));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols));
+    auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+
+    ExecuteAndVerify(std::move(limit_ptr), 31);
+}
+
+// TOO SLOW
+// TEST_F(ClickBenchTest, Query32) {
+//     // SELECT WatchID, ClientIP, COUNT(*) AS c, SUM(IsRefresh), AVG(ResolutionWidth)
+//     // FROM hits GROUP BY WatchID, ClientIP ORDER BY c DESC LIMIT 10;
+//     std::set<std::string> cols = {"WatchID", "ClientIP", "IsRefresh", "ResolutionWidth"};
+//     auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+//     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+//     states.emplace_back(std::make_unique<CountState>(), "WatchID");
+//     states.emplace_back(std::make_unique<SumState>(), "IsRefresh");
+//     states.emplace_back(std::make_unique<AvgState>(), "ResolutionWidth");
+
+//     std::vector<std::string> group_cols = {"WatchID", "ClientIP"};
+//     std::vector<std::string> res_names = {"COUNT(*)", "SUM(IsRefresh)", "AVG(ResolutionWidth)"};
+
+//     auto agg_ptr = std::make_unique<AggregationOperator>(
+//         std::move(scan_ptr), std::move(states), std::move(res_names), std::move(group_cols));
+
+//     auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+//     auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols));
+//     auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+
+//     ExecuteAndVerify(std::move(limit_ptr), 32);
+// }
+
+// TOO SLOW
+// TEST_F(ClickBenchTest, Query33) {
+//     // SELECT URL, COUNT(*) AS c FROM hits GROUP BY URL ORDER BY c DESC LIMIT 10;
+//     std::set<std::string> cols = {"URL"};
+//     auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+//     std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+//     states.emplace_back(std::make_unique<CountState>(), "URL");
+
+//     std::vector<std::string> group_cols = {"URL"};
+//     std::vector<std::string> res_names = {"COUNT(*)"};
+
+//     auto agg_ptr = std::make_unique<AggregationOperator>(
+//         std::move(scan_ptr), std::move(states), std::move(res_names), std::move(group_cols));
+
+//     auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+//     auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols));
+//     auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
+
+//     ExecuteAndVerify(std::move(limit_ptr), 33);
+// }
