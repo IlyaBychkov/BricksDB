@@ -1,7 +1,8 @@
+#include "operators/aggregation_operator.h"
+
 #include <cstddef>
 #include <unordered_set>
 
-#include "operators/aggregation_operator.h"
 #include "operators/group_key.h"
 #include "scheme/batch.h"
 #include "scheme/column.h"

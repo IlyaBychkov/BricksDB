@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "scheme/batch.h"
+#include "scheme/column.h"
 
 FilterOperator::FilterOperator(std::unique_ptr<IOperator> child,
                                std::unique_ptr<BoolExpression> expr)
@@ -30,11 +31,12 @@ Column ApplyMaskToColumn(const Column &column, const std::vector<bool> &mask) {
 }
 
 std::optional<Batch> FilterOperator::Next() {
-    while (true) {
-        auto batch_opt = child_->Next();
-        if (!batch_opt.has_value()) {
-            return std::nullopt;
+    std::optional<Scheme> saved_scheme;
+    while (auto batch_opt = child_->Next()) {
+        if (!saved_scheme) {
+            saved_scheme = batch_opt->GetScheme();
         }
+
         Batch batch = std::move(*batch_opt);
 
         std::vector<bool> mask = expr_->Evaluate(batch);
@@ -49,4 +51,14 @@ std::optional<Batch> FilterOperator::Next() {
 
         return Batch(std::move(filtered), batch.GetScheme());
     }
+
+    if (saved_scheme) {
+        std::vector<Column> empty_columns;
+        for (size_t i = 0; i < saved_scheme->GetSize(); ++i) {
+            empty_columns.emplace_back(saved_scheme->GetType(i));
+        }
+
+        return Batch(std::move(empty_columns), std::move(*saved_scheme));
+    }
+    return std::nullopt;
 }

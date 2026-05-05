@@ -1,13 +1,35 @@
 #include "operators/sort_operator.h"
 
 #include <algorithm>
+#include <functional>
 #include <numeric>
 
-#include "operators/group_key.h"
-
 SortOperator::SortOperator(std::unique_ptr<IOperator> child,
-                           std::vector<std::pair<std::string, bool>>&& sort_columns)
-    : child_(std::move(child)), sort_columns_(std::move(sort_columns)) {
+                           std::vector<std::pair<std::string, bool>>&& sort_columns, int limit,
+                           int offset)
+    : child_(std::move(child)),
+      sort_columns_(std::move(sort_columns)),
+      limit_(limit),
+      offset_(offset) {
+}
+
+void ReorderBatch(Batch& batch, std::vector<size_t>& indices) {
+    for (auto& column : batch.GetAllColumns()) {
+        std::visit(
+            [&indices]<typename T>(std::vector<T>& vec) {
+                if (indices.empty()) {
+                    vec.clear();
+                } else {
+                    std::vector<T> sorted;
+                    sorted.reserve(indices.size());
+                    for (size_t i : indices) {
+                        sorted.push_back(std::move(vec[i]));
+                    }
+                    vec = std::move(sorted);
+                }
+            },
+            column.Value());
+    }
 }
 
 std::optional<Batch> SortOperator::Next() {
@@ -17,47 +39,73 @@ std::optional<Batch> SortOperator::Next() {
     }
 
     Batch batch = std::move(*first_batch_opt);
-    while (auto b_opt = child_->Next()) {
-        const auto& new_cols = b_opt->GetAllColumns();
-        for (size_t i = 0; i < batch.ColumnsCnt(); ++i) {
+
+    auto build_comparator = [&](const Batch& batch) {
+        std::vector<std::function<int(size_t, size_t)>> cmps;
+        for (auto& [name, desc] : sort_columns_) {
             std::visit(
-                [&]<typename T>(std::vector<T>& vec) {
-                    const auto& new_vec = std::get<std::vector<T>>(new_cols[i].Value());
-                    vec.insert(std::end(vec), std::begin(new_vec), std::end(new_vec));
+                [&cmps, desc](const auto& vec) {
+                    cmps.push_back([&vec, desc](size_t a, size_t b) -> int {  // 1 = true (a < b)
+                        if (vec[a] < vec[b]) {
+                            return desc ? -1 : 1;
+                        }
+                        if (vec[a] > vec[b]) {
+                            return desc ? 1 : -1;
+                        }
+                        return 0;
+                    });
                 },
-                batch.GetColumn(i).Value());
+                batch.GetColumn(name).Value());
         }
+
+        return [cmps = std::move(cmps)](size_t a, size_t b) {
+            for (const auto& comp : cmps) {
+                int res = comp(a, b);
+                if (res != 0) {
+                    return res == 1;
+                }
+            }
+            return false;
+        };
+    };
+
+    while (auto b_opt = child_->Next()) {
+        batch.Merge(std::move(*b_opt));
+
+        if (limit_ == -1) {
+            continue;
+        }
+
+        size_t k = static_cast<size_t>(limit_ + offset_);
+        if (batch.RowsCnt() <= k) {
+            continue;
+        }
+
+        std::vector<size_t> indices(batch.RowsCnt());
+        std::iota(indices.begin(), indices.end(), 0);
+        std::partial_sort(indices.begin(), indices.begin() + k, indices.end(),
+                          build_comparator(batch));
+        indices.resize(k);
+        ReorderBatch(batch, indices);
     }
 
     std::vector<size_t> indices(batch.RowsCnt());
     std::iota(indices.begin(), indices.end(), 0);
+    auto cmp = build_comparator(batch);
 
-    std::sort(indices.begin(), indices.end(), [&](size_t a, size_t b) {
-        for (const auto& [col_name, desc] : sort_columns_) {
-            auto val_a = std::visit([a](const auto& vect) -> ValueType { return vect[a]; },
-                                    batch.GetColumn(col_name).Value());
-            auto val_b = std::visit([b](const auto& vect) -> ValueType { return vect[b]; },
-                                    batch.GetColumn(col_name).Value());
-
-            if (val_a < val_b) {
-                return !desc;
-            }
-            if (val_a > val_b) {
-                return desc;
-            }
+    if (limit_ == -1) {
+        std::sort(indices.begin(), indices.end(), cmp);
+    } else {
+        size_t k = static_cast<size_t>(limit_ + offset_);
+        std::partial_sort(indices.begin(), std::min(indices.begin() + k, indices.end()),
+                          indices.end(), cmp);
+        if (indices.size() > k) {
+            indices.resize(k);
         }
-        return false;
-    });
-    for (auto& column : batch.GetAllColumns()) {
-        std::visit(
-            [&indices]<typename T>(std::vector<T>& vec) {
-                std::vector<T> sorted_vec(vec.size());
-                for (size_t i = 0; i < vec.size(); ++i) {
-                    sorted_vec[i] = vec[indices[i]];
-                }
-                vec = std::move(sorted_vec);
-            },
-            column.Value());
+        indices.erase(indices.begin(), indices.begin() + offset_);
     }
+
+    ReorderBatch(batch, indices);
+
     return batch;
 }

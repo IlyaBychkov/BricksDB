@@ -34,9 +34,12 @@ public:
     std::vector<Column>& GetAllColumns();
     const std::vector<Column>& GetAllColumns() const;
 
-    Column GetColumn(const std::string& name) const;
+    Column& GetColumn(const std::string& name);
+    const Column& GetColumn(const std::string& name) const;
 
     void AddColumn(const Column& columnn, const SchemeElement& se);
+
+    void Merge(Batch&& other);
 
 private:
     std::vector<Column> data_;

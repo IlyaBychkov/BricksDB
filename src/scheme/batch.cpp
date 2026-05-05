@@ -82,7 +82,16 @@ const std::vector<Column>& Batch::GetAllColumns() const {
     return data_;
 }
 
-Column Batch::GetColumn(const std::string& name) const {
+Column& Batch::GetColumn(const std::string& name) {
+    for (size_t i = 0; i < ColumnsCnt(); ++i) {
+        if (GetColumnName(i) == name) {
+            return data_[i];
+        }
+    }
+    throw std::runtime_error("Column not found: " + name);
+}
+
+const Column& Batch::GetColumn(const std::string& name) const {
     for (size_t i = 0; i < ColumnsCnt(); ++i) {
         if (GetColumnName(i) == name) {
             return data_[i];
@@ -94,6 +103,21 @@ Column Batch::GetColumn(const std::string& name) const {
 void Batch::AddColumn(const Column& columnn, const SchemeElement& se) {
     data_.push_back(columnn);
     scheme_.AddElement(se);
+}
+
+void Batch::Merge(Batch&& other) {
+    if (ColumnsCnt() != other.ColumnsCnt()) {
+        throw std::runtime_error("Batch::Merge: Column count mismatch");
+    }
+    // TODO: GetScheme() == other.GetScheme()
+    for (size_t i = 0; i < ColumnsCnt(); ++i) {
+        std::visit(
+            [col = other.GetColumn(i).Value()]<typename T>(std::vector<T>& vec) {
+                auto& src = std::get<std::vector<T>>(col);
+                vec.insert(vec.end(), src.begin(), src.end());
+            },
+            data_[i].Value());
+    }
 }
 
 std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std::ifstream& fin,

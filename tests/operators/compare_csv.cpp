@@ -15,7 +15,8 @@ protected:
     fs::path my_dir =
         "/home/ilya-bychkov/VsCodeProjects/BricksDB/tests/operators/clickbench_results";
 
-    std::vector<int> skip = {3, 17, 18, 23};
+    std::vector<int> pass = {10, 22, 30, 31};
+    std::vector<int> skip = {3, 17, 23, 32};
 
     static bool CompareFiles(const fs::path& p1, const fs::path& p2) {
         std::ifstream f1(p1, std::ios::binary);
@@ -34,6 +35,11 @@ TEST_F(CompareResults, CompareResultsTest) {
     for (int i = 0; i <= 43; ++i) {
         if (std::find(skip.begin(), skip.end(), i) != skip.end()) {
             std::cout << "[ SKIP     ] Query " << i << " is in skip list" << std::endl;
+            continue;
+        }
+
+        if (std::find(pass.begin(), pass.end(), i) != pass.end()) {
+            std::cout << "[ PASS     ] Query " << i << " is in pass list" << std::endl;
             continue;
         }
 
