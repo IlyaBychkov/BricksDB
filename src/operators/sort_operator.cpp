@@ -89,6 +89,11 @@ std::optional<Batch> SortOperator::Next() {
         ReorderBatch(batch, indices);
     }
 
+    if (batch.RowsCnt() <= static_cast<size_t>(offset_)) {
+        batch.ClearValues();
+        return batch;
+    }
+
     std::vector<size_t> indices(batch.RowsCnt());
     std::iota(indices.begin(), indices.end(), 0);
     auto cmp = build_comparator(batch);

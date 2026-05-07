@@ -15,7 +15,7 @@ protected:
     fs::path my_dir =
         "/home/ilya-bychkov/VsCodeProjects/BricksDB/tests/operators/clickbench_results";
 
-    std::vector<int> pass = {10, 22, 30, 31};
+    std::vector<int> pass = {10, 22, 30, 31, 38, 41};
     std::vector<int> skip = {3, 17, 23, 32};
 
     static bool CompareFiles(const fs::path& p1, const fs::path& p2) {
@@ -43,8 +43,10 @@ TEST_F(CompareResults, CompareResultsTest) {
             continue;
         }
 
-        fs::path german_file = german_dir / ("q" + std::to_string(i) + ".csv");
-        fs::path my_file = my_dir / (std::to_string(i) + "ans.csv");
+        std::string num = std::to_string(i);
+        fs::path german_file =
+            german_dir / ("query_" + (num.size() == 1 ? "0" + num : num) + ".csv");
+        fs::path my_file = my_dir / (num + "ans.csv");
 
         if (!fs::exists(german_file) || !fs::exists(my_file)) {
             std::cout << "[ INFO     ] Missing file for query " << i << ", skipping..."

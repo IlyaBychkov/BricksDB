@@ -120,6 +120,12 @@ void Batch::Merge(Batch&& other) {
     }
 }
 
+void Batch::ClearValues() {
+    for (auto& column : data_) {
+        std::visit([](auto& vec) { vec.clear(); }, column.Value());
+    }
+}
+
 std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std::ifstream& fin,
                                                       int64_t rows_cnt) {
     std::vector<Column> data;

@@ -41,6 +41,8 @@ public:
 
     void Merge(Batch&& other);
 
+    void ClearValues();
+
 private:
     std::vector<Column> data_;
     Scheme scheme_;

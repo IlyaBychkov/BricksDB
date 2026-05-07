@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+#include "time_transform.h"
+
 CSVWriter::CSVWriter(const std::string& filename) : filename_(filename) {
 }
 
@@ -115,12 +117,10 @@ std::expected<void, std::string> CSVWriter::WriteBatch(const Batch& batch) {
                 row.push_back(val);
             } else if (t == Type::timestamp) {
                 const auto& val = batch.GetColumn(c).GetValue<int64_t>(i);
-                std::chrono::sys_seconds ts{std::chrono::seconds{val}};
-                row.push_back(std::format("{:%F %T}", ts));
+                row.push_back(IntToTimestamp(val));
             } else if (t == Type::date) {
                 const auto& val = batch.GetColumn(c).GetValue<int32_t>(i);
-                std::chrono::sys_days dt{std::chrono::days{val}};
-                row.push_back(std::format("{:%F}", dt));
+                row.push_back(IntToDate(val));
             } else {
                 return std::unexpected(std::string("CSVWriter::WriteBatchToCSV: "
                                                    "Unsupported column type at column ") +
