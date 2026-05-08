@@ -9,6 +9,7 @@
 #include "operators/aggregation_operator.h"
 #include "operators/filter_operator.h"
 #include "operators/limit_operator.h"
+#include "operators/map_operator.h"
 #include "operators/scan_operator.h"
 #include "operators/sort_operator.h"
 #include "scheme/batch.h"
@@ -360,7 +361,30 @@ TEST_F(ClickBenchTest, Query17) {
     ExecuteAndVerify(std::move(limit_ptr), 17);
 }
 
-// SKIP 18 BECOUSE OF EXTRACT FUNCTION, WHICH IS NOT IMPLEMENTED YET
+// SELECT UserID, extract(minute FROM EventTime) AS m, SearchPhrase, COUNT(*) FROM hits GROUP BY
+// UserID, m, SearchPhrase ORDER BY COUNT(*) DESC LIMIT 10;
+TEST_F(ClickBenchTest, Query18) {
+    std::set<std::string> cols = {"UserID", "EventTime", "SearchPhrase"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    std::vector<std::pair<std::unique_ptr<IExpression>, std::string>> map_exprs;
+    map_exprs.emplace_back(std::make_unique<UnaryExpression<ExtractMinuteOp>>(
+                               std::make_unique<ColumnExpression>("EventTime"), Type::int16),
+                           "m");
+    auto map_ptr = std::make_unique<MapOperator>(std::move(scan_ptr), std::move(map_exprs));
+
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<CountState>(), "UserID");
+    std::vector<std::string> res_names = {"COUNT(*)"};
+    std::vector<std::string> group_cols = {"UserID", "m", "SearchPhrase"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(
+        std::move(map_ptr), std::move(states), std::move(res_names), std::move(group_cols));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols), 10);
+
+    ExecuteAndVerify(std::move(sort_ptr), 18);
+}
 
 TEST_F(ClickBenchTest, Query19) {
     // SELECT UserID FROM hits WHERE UserID = 435090932899640449;
@@ -518,6 +542,39 @@ TEST_F(ClickBenchTest, Query25) {
 //     ExecuteAndVerify(std::move(limit_ptr), 26);
 // }
 
+// SELECT CounterID, AVG(STRLEN(URL)) AS l, COUNT(*) AS c FROM hits WHERE URL <> '' GROUP BY
+// CounterID HAVING COUNT(*) > 100000 ORDER BY l DESC LIMIT 25;
+TEST_F(ClickBenchTest, Query27) {
+    std::set<std::string> cols = {"CounterID", "URL"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    auto expr1 =
+        std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>("URL", "");
+    auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr1));
+
+    std::vector<std::pair<std::unique_ptr<IExpression>, std::string>> map_exprs;
+    map_exprs.emplace_back(std::make_unique<UnaryExpression<StrLenOp>>(
+                               std::make_unique<ColumnExpression>("URL"), Type::int32),
+                           "STRLEN(URL)");
+    auto map_ptr = std::make_unique<MapOperator>(std::move(filter_ptr), std::move(map_exprs));
+
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<AvgState>(), "STRLEN(URL)");
+    states.emplace_back(std::make_unique<CountState>(), "CounterID");
+    std::vector<std::string> res_names = {"l", "c"};
+    std::vector<std::string> group_cols = {"CounterID"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(
+        std::move(map_ptr), std::move(states), std::move(res_names), std::move(group_cols));
+
+    auto expr2 = std::make_unique<CompareExpression<std::greater<int64_t>, int64_t>>("c", 100000LL);
+    auto having_ptr = std::make_unique<FilterOperator>(std::move(agg_ptr), std::move(expr2));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"l", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(having_ptr), std::move(sort_cols), 25);
+
+    ExecuteAndVerify(std::move(sort_ptr), 27);
+}
+
 TEST_F(ClickBenchTest, Query30) {
     // SELECT SearchEngineID, ClientIP, COUNT(*) AS c, SUM(IsRefresh), AVG(ResolutionWidth)
     // FROM hits WHERE SearchPhrase <> '' GROUP BY SearchEngineID, ClientIP ORDER BY c DESC LIMIT
@@ -620,6 +677,60 @@ TEST_F(ClickBenchTest, Query33) {
     auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols), 10);
 
     ExecuteAndVerify(std::move(sort_ptr), 33);
+}
+
+// SELECT 1, URL, COUNT(*) AS c FROM hits GROUP BY 1, URL ORDER BY c DESC LIMIT 10;
+TEST_F(ClickBenchTest, Query34) {
+    std::set<std::string> cols = {"URL"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    std::vector<std::pair<std::unique_ptr<IExpression>, std::string>> map_exprs;
+    map_exprs.emplace_back(std::make_unique<ConstantExpression<int32_t>>(Type::int32, 1),
+                           "const_1");
+    auto map_ptr = std::make_unique<MapOperator>(std::move(scan_ptr), std::move(map_exprs));
+
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<CountState>(), "URL");
+    std::vector<std::string> group_cols = {"const_1", "URL"};
+    std::vector<std::string> res_names = {"COUNT(*)"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(
+        std::move(map_ptr), std::move(states), std::move(res_names), std::move(group_cols));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols), 10);
+
+    ExecuteAndVerify(std::move(sort_ptr), 34);
+}
+
+// SELECT ClientIP, ClientIP - 1, ClientIP - 2, ClientIP - 3, COUNT(*) AS c FROM hits GROUP BY
+// ClientIP, ClientIP - 1, ClientIP - 2, ClientIP - 3 ORDER BY c DESC LIMIT 10;
+TEST_F(ClickBenchTest, Query35) {
+    std::set<std::string> cols = {"ClientIP"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    std::vector<std::pair<std::unique_ptr<IExpression>, std::string>> map_exprs;
+    for (int32_t i = 1; i <= 3; ++i) {
+        auto left = std::make_unique<ColumnExpression>("ClientIP");
+        auto right = std::make_unique<ConstantExpression<int32_t>>(Type::int32, i);
+        std::string col_name = "ClientIP-" + std::to_string(i);
+
+        map_exprs.emplace_back(std::make_unique<BinaryExpression<MinusOp>>(
+                                   std::move(left), std::move(right), Type::int32),
+                               col_name);
+    }
+    auto map_ptr = std::make_unique<MapOperator>(std::move(scan_ptr), std::move(map_exprs));
+
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<CountState>(), "ClientIP");
+    std::vector<std::string> group_cols = {"ClientIP", "ClientIP-1", "ClientIP-2", "ClientIP-3"};
+    std::vector<std::string> res_names = {"COUNT(*)"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(
+        std::move(map_ptr), std::move(states), std::move(res_names), std::move(group_cols));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"COUNT(*)", true}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols), 10);
+
+    ExecuteAndVerify(std::move(sort_ptr), 35);
 }
 
 // SELECT URL, COUNT(*) AS PageViews FROM hits WHERE CounterID = 62 AND EventDate >= '2013-07-01'

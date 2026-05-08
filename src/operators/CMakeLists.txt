@@ -16,3 +16,7 @@ target_link_libraries(sort_operator PUBLIC batch)
 add_library(limit_operator STATIC limit_operator.cpp)
 target_include_directories(limit_operator PUBLIC ${CMAKE_SOURCE_DIR}/include/)
 target_link_libraries(limit_operator PUBLIC batch)
+
+add_library(map_operator STATIC map_operator.cpp)
+target_include_directories(map_operator PUBLIC ${CMAKE_SOURCE_DIR}/include/)
+target_link_libraries(map_operator PUBLIC batch expressions)
