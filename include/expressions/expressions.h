@@ -88,6 +88,15 @@ struct MinusOp {
     }
 };
 
+struct PlusOp {
+    template <typename T, typename U>
+    auto operator()(const T& a, const U& b) const
+        requires requires { a + b; }
+    {
+        return a + b;
+    }
+};
+
 template <typename Operation>
 struct UnaryExpression : public IExpression {
 public:

@@ -575,6 +575,39 @@ TEST_F(ClickBenchTest, Query27) {
     ExecuteAndVerify(std::move(sort_ptr), 27);
 }
 
+// SELECT SUM(ResolutionWidth), SUM(ResolutionWidth + 1), ... SUM(ResolutionWidth + 89) FROM hits;
+TEST_F(ClickBenchTest, Query29) {
+    std::set<std::string> cols = {"ResolutionWidth"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    std::vector<std::pair<std::unique_ptr<IExpression>, std::string>> map_exprs;
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    std::vector<std::string> res_names;
+
+    states.emplace_back(std::make_unique<SumState>(), "ResolutionWidth");
+    res_names.push_back("SUM(ResolutionWidth)");
+
+    for (int i = 1; i <= 89; ++i) {
+        std::string new_col_name = "ResolutionWidth+" + std::to_string(i);
+
+        auto left = std::make_unique<ColumnExpression>("ResolutionWidth");
+        auto right = std::make_unique<ConstantExpression<int32_t>>(Type::int32, i);
+        map_exprs.emplace_back(std::make_unique<BinaryExpression<PlusOp>>(
+                                   std::move(left), std::move(right), Type::int32),
+                               new_col_name);
+
+        states.emplace_back(std::make_unique<SumState>(), new_col_name);
+        res_names.push_back("SUM(" + new_col_name + ")");
+    }
+
+    auto map_ptr = std::make_unique<MapOperator>(std::move(scan_ptr), std::move(map_exprs));
+
+    auto agg_ptr = std::make_unique<AggregationOperator>(std::move(map_ptr), std::move(states),
+                                                         std::move(res_names));
+
+    ExecuteAndVerify(std::move(agg_ptr), 29);
+}
+
 TEST_F(ClickBenchTest, Query30) {
     // SELECT SearchEngineID, ClientIP, COUNT(*) AS c, SUM(IsRefresh), AVG(ResolutionWidth)
     // FROM hits WHERE SearchPhrase <> '' GROUP BY SearchEngineID, ClientIP ORDER BY c DESC LIMIT
