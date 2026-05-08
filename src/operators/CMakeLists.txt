@@ -20,3 +20,7 @@ target_link_libraries(limit_operator PUBLIC batch)
 add_library(map_operator STATIC map_operator.cpp)
 target_include_directories(map_operator PUBLIC ${CMAKE_SOURCE_DIR}/include/)
 target_link_libraries(map_operator PUBLIC batch expressions)
+
+add_library(projection_operator STATIC projection_operator.cpp)
+target_include_directories(projection_operator PUBLIC ${CMAKE_SOURCE_DIR}/include/)
+target_link_libraries(projection_operator PUBLIC batch)

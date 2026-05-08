@@ -10,6 +10,7 @@
 #include "operators/filter_operator.h"
 #include "operators/limit_operator.h"
 #include "operators/map_operator.h"
+#include "operators/projection_operator.h"
 #include "operators/scan_operator.h"
 #include "operators/sort_operator.h"
 #include "scheme/batch.h"
@@ -490,22 +491,24 @@ TEST_F(ClickBenchTest, Query23) {
     ExecuteAndVerify(std::move(sort_ptr), 23);
 }
 
-// NEED PROJECTION
-// TEST_F(ClickBenchTest, Query24) {
-//     // SELECT SearchPhrase FROM hits WHERE SearchPhrase <> '' ORDER BY EventTime LIMIT 10;
-//     std::set<std::string> cols = {"SearchPhrase", "EventTime"};
-//     auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
-//
-//     auto expr = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
-//         "SearchPhrase", "");
-//     auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
-//
-//     auto sort_cols = std::vector<std::pair<std::string, bool>>{{"EventTime", false}};
-//     auto sort_ptr = std::make_unique<SortOperator>(std::move(filter_ptr), std::move(sort_cols),
-//     10);
-//
-//     ExecuteAndVerify(std::move(sort_ptr), 24);
-// }
+// SELECT SearchPhrase FROM hits WHERE SearchPhrase <> '' ORDER BY EventTime LIMIT 10;
+TEST_F(ClickBenchTest, Query24) {
+    std::set<std::string> cols = {"SearchPhrase", "EventTime"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    auto expr = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
+        "SearchPhrase", "");
+    auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"EventTime", false}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(filter_ptr), std::move(sort_cols), 10);
+
+    auto projections = std::vector<std::string>{"SearchPhrase"};
+    auto projection_ptr =
+        std::make_unique<ProjectionOperator>(std::move(sort_ptr), std::move(projections));
+
+    ExecuteAndVerify(std::move(projection_ptr), 24);
+}
 
 TEST_F(ClickBenchTest, Query25) {
     // SELECT SearchPhrase FROM hits WHERE SearchPhrase <> '' ORDER BY SearchPhrase LIMIT 10;
@@ -522,25 +525,25 @@ TEST_F(ClickBenchTest, Query25) {
     ExecuteAndVerify(std::move(sort_ptr), 25);
 }
 
-// NEED PROJECTION
-// TEST_F(ClickBenchTest, Query26) {
-//     // SELECT SearchPhrase FROM hits WHERE SearchPhrase <> '' ORDER BY EventTime, SearchPhrase
-//     LIMIT
-//     // 10;
-//     std::set<std::string> cols = {"SearchPhrase", "EventTime"};
-//     auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
-//
-//     auto expr = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
-//         "SearchPhrase", "");
-//     auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
-//
-//     auto sort_cols =
-//         std::vector<std::pair<std::string, bool>>{{"EventTime", false}, {"SearchPhrase", false}};
-//     auto sort_ptr = std::make_unique<SortOperator>(std::move(filter_ptr), std::move(sort_cols));
-//     auto limit_ptr = std::make_unique<LimitOperator>(std::move(sort_ptr), 10);
-//
-//     ExecuteAndVerify(std::move(limit_ptr), 26);
-// }
+// SELECT SearchPhrase FROM hits WHERE SearchPhrase <> '' ORDER BY EventTime, SearchPhrase LIMIT 10;
+TEST_F(ClickBenchTest, Query26) {
+    std::set<std::string> cols = {"SearchPhrase", "EventTime"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    auto expr = std::make_unique<CompareExpression<std::not_equal_to<std::string>, std::string>>(
+        "SearchPhrase", "");
+    auto filter_ptr = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr));
+
+    auto sort_cols =
+        std::vector<std::pair<std::string, bool>>{{"EventTime", false}, {"SearchPhrase", false}};
+    auto sort_ptr = std::make_unique<SortOperator>(std::move(filter_ptr), std::move(sort_cols), 10);
+
+    auto projections = std::vector<std::string>{"SearchPhrase"};
+    auto projection_ptr =
+        std::make_unique<ProjectionOperator>(std::move(sort_ptr), std::move(projections));
+
+    ExecuteAndVerify(std::move(projection_ptr), 26);
+}
 
 // SELECT CounterID, AVG(STRLEN(URL)) AS l, COUNT(*) AS c FROM hits WHERE URL <> '' GROUP BY
 // CounterID HAVING COUNT(*) > 100000 ORDER BY l DESC LIMIT 25;
