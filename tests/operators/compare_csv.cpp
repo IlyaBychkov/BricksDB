@@ -46,7 +46,7 @@ TEST_F(CompareResults, CompareResultsTest) {
         std::string num = std::to_string(i);
         fs::path german_file =
             german_dir / ("query_" + (num.size() == 1 ? "0" + num : num) + ".csv");
-        fs::path my_file = my_dir / (num + "ans.csv");
+        fs::path my_file = my_dir / ("query_" + num + ".csv");
 
         if (!fs::exists(german_file) || !fs::exists(my_file)) {
             std::cout << "[ INFO     ] Missing file for query " << i << ", skipping..."
