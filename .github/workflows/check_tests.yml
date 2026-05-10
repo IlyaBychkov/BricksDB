@@ -13,10 +13,10 @@ jobs:
     - uses: actions/checkout@v4
     - name: fetch dependencies
       run: |
-        sudo apt-get install libgtest-dev clang-format clang-tidy
+        sudo apt-get install -y libgtest-dev clang-format-18 clang-tidy-18
     - name: clang format
       run : |
-        script/format.sh
+        script/format.sh --fix
     - name: cmake
       run: |
         mkdir build
