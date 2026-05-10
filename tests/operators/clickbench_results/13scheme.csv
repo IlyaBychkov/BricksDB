@@ -1,0 +1,2 @@
+SearchPhrase,string
+COUNT(DISTINCT UserID),int64

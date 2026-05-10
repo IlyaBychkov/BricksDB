@@ -1,5 +1,9 @@
 #include "csv_writer.h"
 
+#include <chrono>
+
+#include "time_transform.h"
+
 CSVWriter::CSVWriter(const std::string& filename) : filename_(filename) {
 }
 
@@ -91,6 +95,50 @@ std::expected<void, std::string> CSVWriter::WriteRow(const std::vector<std::stri
         return std::unexpected("CSVWriter::WriteRow: Writer crashed while writing to " + filename_);
     }
 
+    return {};
+}
+
+std::expected<void, std::string> CSVWriter::WriteBatch(const Batch& batch) {
+    for (size_t i = 0; i < batch.RowsCnt(); ++i) {
+        std::vector<std::string> row;
+        for (size_t c = 0; c < batch.ColumnsCnt(); ++c) {
+            Type t = batch.GetColumnType(c);
+            if (t == Type::int64) {
+                const auto& val = batch.GetColumn(c).GetValue<int64_t>(i);
+                row.push_back(std::to_string(val));
+            } else if (t == Type::int32) {
+                const auto& val = batch.GetColumn(c).GetValue<int32_t>(i);
+                row.push_back(std::to_string(val));
+            } else if (t == Type::int16) {
+                const auto& val = batch.GetColumn(c).GetValue<int16_t>(i);
+                row.push_back(std::to_string(val));
+            } else if (t == Type::string) {
+                const auto& val = batch.GetColumn(c).GetValue<std::string>(i);
+                row.push_back(val);
+            } else if (t == Type::timestamp) {
+                const auto& val = batch.GetColumn(c).GetValue<int64_t>(i);
+                row.push_back(IntToTimestamp(val));
+            } else if (t == Type::date) {
+                const auto& val = batch.GetColumn(c).GetValue<int32_t>(i);
+                row.push_back(IntToDate(val));
+            } else {
+                return std::unexpected(std::string("CSVWriter::WriteBatchToCSV: "
+                                                   "Unsupported column type at column ") +
+                                       std::to_string(c));
+            }
+        }
+        auto res = WriteRow(row);
+        if (!res) {
+            return std::unexpected(
+                std::string("CSVWriter::WriteBatchToCSV: CSVWriter WriteRow failed: ") +
+                res.error());
+        }
+    }
+    if (IsCrashed()) {
+        return std::unexpected(
+            std::string("CSVWriter::WriteBatchToCSV: CSVWriter crashed while writing to '") +
+            filename_ + "'");
+    }
     return {};
 }
 

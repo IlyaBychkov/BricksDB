@@ -34,7 +34,14 @@ public:
     std::vector<Column>& GetAllColumns();
     const std::vector<Column>& GetAllColumns() const;
 
+    Column& GetColumn(const std::string& name);
+    const Column& GetColumn(const std::string& name) const;
+
     void AddColumn(const Column& columnn, const SchemeElement& se);
+
+    void Merge(Batch&& other);
+
+    void ClearValues();
 
 private:
     std::vector<Column> data_;
@@ -43,3 +50,5 @@ private:
 
 std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std::ifstream& fin,
                                                       int64_t rows_cnt);
+
+std::expected<void, std::string> WriteBatchToCSV(const Batch& batch, const std::string& filename);

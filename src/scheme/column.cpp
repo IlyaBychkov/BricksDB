@@ -61,10 +61,15 @@ std::expected<void, std::string> WriteColumnToColumnar(const Column& column, std
         },
         [&fout](const std::vector<std::string>& vec) {
             std::vector<int64_t> lens;
+            int64_t total = 0;
             for (const auto& str : vec) {
-                lens.push_back(static_cast<int64_t>(str.size()));
+                int64_t l = static_cast<int64_t>(str.size());
+                lens.push_back(l);
+                total += l;
             }
+            total += lens.size() * sizeof(int64_t);
 
+            fout.write(reinterpret_cast<const char*>(&total), sizeof(total));
             fout.write(reinterpret_cast<const char*>(lens.data()), lens.size() * sizeof(int64_t));
             for (const auto& str : vec) {
                 fout.write(str.data(), str.size());
@@ -99,6 +104,9 @@ std::expected<Column, std::string> ReadColumnFromColumnar(Type type, std::ifstre
             fin.read(reinterpret_cast<char*>(vec.data()), vec.size() * sizeof(int16_t));
         },
         [&fin, rows_cnt](std::vector<std::string>& vec) {
+            int64_t total = 0;
+            fin.read(reinterpret_cast<char*>(&total), sizeof(total));
+
             std::vector<int64_t> lens(rows_cnt);
             fin.read(reinterpret_cast<char*>(lens.data()), lens.size() * sizeof(int64_t));
 

@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "csv_writer.h"
+
 Batch::Batch(const std::vector<Column>& data, const Scheme& scheme) : data_(data), scheme_(scheme) {
     if (!Validate()) {
         throw std::runtime_error("Invalid Batch construction");
@@ -80,9 +82,48 @@ const std::vector<Column>& Batch::GetAllColumns() const {
     return data_;
 }
 
+Column& Batch::GetColumn(const std::string& name) {
+    for (size_t i = 0; i < ColumnsCnt(); ++i) {
+        if (GetColumnName(i) == name) {
+            return data_[i];
+        }
+    }
+    throw std::runtime_error("Column not found: " + name);
+}
+
+const Column& Batch::GetColumn(const std::string& name) const {
+    for (size_t i = 0; i < ColumnsCnt(); ++i) {
+        if (GetColumnName(i) == name) {
+            return data_[i];
+        }
+    }
+    throw std::runtime_error("Column not found: " + name);
+}
+
 void Batch::AddColumn(const Column& columnn, const SchemeElement& se) {
     data_.push_back(columnn);
     scheme_.AddElement(se);
+}
+
+void Batch::Merge(Batch&& other) {
+    if (ColumnsCnt() != other.ColumnsCnt()) {
+        throw std::runtime_error("Batch::Merge: Column count mismatch");
+    }
+    // TODO: GetScheme() == other.GetScheme()
+    for (size_t i = 0; i < ColumnsCnt(); ++i) {
+        std::visit(
+            [col = other.GetColumn(i).Value()]<typename T>(std::vector<T>& vec) {
+                auto& src = std::get<std::vector<T>>(col);
+                vec.insert(vec.end(), src.begin(), src.end());
+            },
+            data_[i].Value());
+    }
+}
+
+void Batch::ClearValues() {
+    for (auto& column : data_) {
+        std::visit([](auto& vec) { vec.clear(); }, column.Value());
+    }
 }
 
 std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std::ifstream& fin,
@@ -103,4 +144,17 @@ std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std:
     }
 
     return batch;
+}
+
+std::expected<void, std::string> WriteBatchToCSV(const Batch& batch, const std::string& filename) {
+    auto t = CreateCSVWriter(filename);
+    if (!t.has_value()) {
+        return std::unexpected("WriteBatchToCSV: Failed to create CSV writer: " + t.error());
+    }
+    CSVWriter writer = std::move(*t);
+    auto res = writer.WriteBatch(batch);
+    if (!res) {
+        return std::unexpected("WriteBatchToCSV: Failed to write batch to CSV: " + res.error());
+    }
+    return {};
 }

@@ -45,7 +45,7 @@ void Scheme::AddElement(SchemeElement elem) {
     values_.push_back(std::move(elem));
 }
 
-std::expected<Scheme, std::string> CreateSchemeFromFile(const std::string& filename) {
+std::expected<Scheme, std::string> CreateSchemeFromCSV(const std::string& filename) {
     auto res = CreateCSVReader(filename);
     if (!res.has_value()) {
         return std::unexpected(std::string("CreateSchemeFromFile: CreateCSVReader failed for '") +
@@ -76,7 +76,7 @@ std::expected<Scheme, std::string> CreateSchemeFromFile(const std::string& filen
     return scheme;
 }
 
-std::expected<void, std::string> WriteSchemeToFile(Scheme scheme, const std::string& filename) {
+std::expected<void, std::string> WriteSchemeToCSV(Scheme scheme, const std::string& filename) {
     auto wrirer_tmp = CreateCSVWriter(filename);
     if (!wrirer_tmp) {
         return std::unexpected(std::string("WriteSchemeToFile: CreateCSVWriter failed for '") +

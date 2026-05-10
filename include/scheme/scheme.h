@@ -37,6 +37,6 @@ private:
     std::vector<SchemeElement> values_;
 };
 
-std::expected<Scheme, std::string> CreateSchemeFromFile(const std::string& filename);
+std::expected<Scheme, std::string> CreateSchemeFromCSV(const std::string& filename);
 
-std::expected<void, std::string> WriteSchemeToFile(Scheme scheme, const std::string& filename);
+std::expected<void, std::string> WriteSchemeToCSV(Scheme scheme, const std::string& filename);

@@ -1,0 +1,4 @@
+UserID,int64
+m,int16
+SearchPhrase,string
+COUNT(*),int64

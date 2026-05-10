@@ -1,0 +1,3 @@
+SUM(AdvEngineID),int64
+COUNT(*),int64
+AVG(ResolutionWidth),int64

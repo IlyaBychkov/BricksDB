@@ -15,6 +15,18 @@ public:
     Column(Type type);
     Column(Type type, int64_t size);
 
+    template <typename T>
+    Column(Type type, std::vector<T> values) : type_(type) {
+        if (((type_ == Type::int64 || type_ == Type::timestamp) && std::is_same_v<T, int64_t>) ||
+            ((type_ == Type::int32 || type_ == Type::date) && std::is_same_v<T, int32_t>) ||
+            (type_ == Type::int16 && std::is_same_v<T, int16_t>) ||
+            (type_ == Type::string && std::is_same_v<T, std::string>)) {
+            value_ = ColumnValue(std::move(values));
+        } else {
+            throw std::runtime_error("Type mismatch in Column constructor");
+        }
+    }
+
     Type GetType() const;
     size_t GetSize() const;
 

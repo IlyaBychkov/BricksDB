@@ -38,3 +38,20 @@ std::string TypeToString(Type type) {
             throw std::runtime_error("Unknown Type enum value");
     }
 }
+
+size_t TypeSizeof(Type type) {
+    switch (type) {
+        case Type::int64:
+        case Type::timestamp:
+            return sizeof(int64_t);
+        case Type::int32:
+        case Type::date:
+            return sizeof(int32_t);
+        case Type::int16:
+            return sizeof(int16_t);
+        case Type::string:
+            throw std::runtime_error("TypeSizeof: Size of string type is variable");
+        default:
+            throw std::runtime_error("Unknown Type enum value");
+    }
+}
