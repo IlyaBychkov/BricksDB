@@ -6,11 +6,11 @@ set -e
 echo "Starting setup..."
 
 # 1. Обновляем списки пакетов
-sudo apt-get update
+apt-get update
 
 # 2. Устанавливаем базовые инструменты сборки
 # Нам нужны: cmake, компилятор (GCC или Clang), git
-sudo apt-get install -y \
+apt-get install -y \
     build-essential \
     cmake \
     clang-20 \
