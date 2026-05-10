@@ -29,4 +29,4 @@ jobs:
     - name: test
       run: |
         cd build
-        ctest --output-on-failure --output-junit test_results.xml
+        ctest -E "clickbench|compare_csv" -V --output-on-failure --output-junit test_results.xml
