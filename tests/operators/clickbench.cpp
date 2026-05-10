@@ -16,35 +16,50 @@
 #include "scheme/batch.h"
 #include "scheme/scheme.h"
 
+std::string GetPath(const char* env_var, const std::string& default_path) {
+    const char* env_val = std::getenv(env_var);
+    if (env_val && !std::string(env_val).empty()) {
+        return std::string(env_val);
+    }
+    return default_path;
+}
+
 class ClickBenchTest : public ::testing::Test {
 protected:
     void SetUp() override {
         repo_root = "/home/ilya-bychkov/VsCodeProjects/BricksDB";
-        hits_file = repo_root / "hits_files" / "hits_sample.br";
-        out_dir = repo_root / "tests" / "operators" / "clickbench_results";
-    }
-
-    void WriteResult(const Batch& batch, const std::string& filename,
-                     const std::string& scheme_filename) {
-        auto wres = WriteBatchToCSV(batch, filename);
-        ASSERT_TRUE(wres.has_value()) << "Failed to write batch: " << wres.error();
-
-        auto sres = WriteSchemeToCSV(batch.GetScheme(), scheme_filename);
-        ASSERT_TRUE(sres.has_value()) << "Failed to write scheme: " << sres.error();
+        hits_file = GetPath("BRICKS_INPUT", repo_root / "hits_files/hits_sample.br");
+        local_out_dir = repo_root / "tests/operators/clickbench_results";
     }
 
     void ExecuteAndVerify(std::unique_ptr<IOperator> root_op, int query_id) {
-        std::string ans_path = (out_dir / (std::to_string(query_id) + "ans.csv")).string();
-        std::string scheme_path = (out_dir / (std::to_string(query_id) + "scheme.csv")).string();
-
         auto res_batch = root_op->Next();
+        ASSERT_TRUE(res_batch.has_value()) << "Query " << query_id << " returned no data";
 
-        WriteResult(*res_batch, ans_path, scheme_path);
+        const char* env_out = std::getenv("BRICKS_OUTPUT");
+
+        if (env_out && !std::string(env_out).empty()) {
+            // Режим Docker
+            auto wres = WriteBatchToCSV(*res_batch, env_out);
+            ASSERT_TRUE(wres.has_value())
+                << "Failed to write batch for query " << query_id << ": " << wres.error();
+        } else {
+            // Режим ctest: сохраняем каждый запрос в свой файл в локальную папку
+            auto batch_path =
+                (local_out_dir / ("query_" + std::to_string(query_id) + ".csv")).string();
+            auto wres = WriteBatchToCSV(*res_batch, batch_path);
+            ASSERT_TRUE(wres.has_value()) << "Failed to write batch: " << wres.error();
+
+            auto scheme_path =
+                (local_out_dir / ("scheme_" + std::to_string(query_id) + ".csv")).string();
+            auto sres = WriteSchemeToCSV(res_batch->GetScheme(), scheme_path);
+            ASSERT_TRUE(sres.has_value()) << "Failed to write scheme: " << sres.error();
+        }
     }
 
     std::filesystem::path repo_root;
     std::filesystem::path hits_file;
-    std::filesystem::path out_dir;
+    std::filesystem::path local_out_dir;
 };
 
 TEST_F(ClickBenchTest, Query0) {
