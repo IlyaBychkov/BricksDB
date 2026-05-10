@@ -1,0 +1,3 @@
+SearchPhrase,string
+MIN(URL),string
+COUNT(*),int64

@@ -1,0 +1,14 @@
+.cache
+.vscode
+build
+build_asan
+build_tsan
+build_debug
+build_release
+cmake-build-debug
+Testing
+.idea
+.pre-commit-config.yaml
+test_files
+build_RelWithDebInfo
+hits_files

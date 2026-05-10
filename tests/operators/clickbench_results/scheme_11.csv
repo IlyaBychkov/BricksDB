@@ -1,0 +1,3 @@
+MobilePhone,int16
+MobilePhoneModel,string
+COUNT(DISTINCT UserID),int64

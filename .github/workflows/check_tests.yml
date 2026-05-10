@@ -1,0 +1,32 @@
+name: format, build and test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-solutions-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: fetch dependencies
+      run: |
+        sudo apt-get install -y libgtest-dev clang-format-18 clang-tidy-18
+    - name: clang format
+      run : |
+        script/format.sh --fix
+    - name: cmake
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Debug ..
+    - name: make
+      run: |
+        cd build
+        make
+    - name: test
+      run: |
+        cd build
+        ctest -E "clickbench|compare_csv" -V --output-on-failure --output-junit test_results.xml

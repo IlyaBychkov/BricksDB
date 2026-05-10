@@ -1,0 +1,19 @@
+repos:
+  - repo: local
+    hooks:
+      - id: clang-format
+        name: clang-format
+        entry: clang-format
+        args: ["-i", "--style=file", "--Werror"]
+        language: system
+        files: \.(c|cpp|h|hpp|cc|cxx|hh)$
+        pass_filenames: true
+      
+      - id: clang-tidy
+        name: clang-tidy
+        entry: clang-tidy
+        args: ["-p", "build", "--warnings-as-errors=*", "--quiet"]
+        language: system
+        files: \.(c|cpp|cc|cxx)$
+        pass_filenames: true
+        require_serial: true
