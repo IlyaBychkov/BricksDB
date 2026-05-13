@@ -139,6 +139,12 @@ struct ExtractMinuteOp {
     }
 };
 
+struct TruncMinuteOp {
+    int64_t operator()(const int64_t timestamp) const {
+        return timestamp - timestamp % 60;
+    }
+};
+
 struct StrLenOp {
     int32_t operator()(const std::string& str) const {
         return static_cast<int32_t>(str.size());
