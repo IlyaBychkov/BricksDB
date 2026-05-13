@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <regex>
 
 #include "../scheme/batch.h"
 #include "../scheme/column.h"
@@ -149,4 +150,34 @@ struct StrLenOp {
     int32_t operator()(const std::string& str) const {
         return static_cast<int32_t>(str.size());
     }
+};
+
+class RegexpReplaceExpression : public IExpression {
+public:
+    RegexpReplaceExpression(std::unique_ptr<IExpression> operand, const std::string& pattern,
+                            const std::string& replacement)
+        : operand_(std::move(operand)), regex_(pattern), replacement_(replacement) {
+    }
+
+    Column Evaluate(const Batch& batch) override {
+        Column col = operand_->Evaluate(batch);
+        size_t n = col.GetSize();
+
+        if (!std::holds_alternative<std::vector<std::string>>(col.Value())) {
+            throw std::runtime_error("RegexpReplaceExpression only supports String columns");
+        }
+
+        const auto& vec = std::get<std::vector<std::string>>(col.Value());
+        std::vector<std::string> res(n);
+        for (size_t i = 0; i < n; ++i) {
+            res[i] = std::regex_replace(vec[i], regex_, replacement_);
+        }
+
+        return Column(Type::string, std::move(res));
+    }
+
+private:
+    std::unique_ptr<IExpression> operand_;
+    std::regex regex_;
+    std::string replacement_;
 };
