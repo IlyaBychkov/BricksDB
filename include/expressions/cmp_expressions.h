@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 
 #include "../scheme/batch.h"
 #include "scheme/column.h"
@@ -26,6 +27,7 @@ template <typename Operation, typename T>
 class CompareExpression : public BoolExpression {
 public:
     CompareExpression(const std::string& name, const T& value) : name_(name), value_(value) {};
+
     std::vector<bool> Evaluate(const Batch& batch) override {
         Column column = batch.GetColumn(name_);
         if (!std::holds_alternative<std::vector<T>>(column.Value())) {
@@ -73,4 +75,34 @@ public:
 private:
     std::string name_;
     std::vector<T> values_;
+};
+
+template <typename Operation>
+class LogicalExpression : public BoolExpression {
+public:
+    LogicalExpression(std::unique_ptr<BoolExpression> left, std::unique_ptr<BoolExpression> right)
+        : left_(std::move(left)), right_(std::move(right)) {};
+
+    std::vector<bool> Evaluate(const Batch& batch) override {
+        std::vector<bool> lvec = left_->Evaluate(batch);
+        std::vector<bool> rvec = right_->Evaluate(batch);
+
+        size_t n = lvec.size();
+        std::vector<bool> res(n);
+        for (size_t i = 0; i < n; ++i) {
+            res[i] = Operation()(lvec[i], rvec[i]);
+        }
+
+        return res;
+    }
+
+private:
+    std::unique_ptr<BoolExpression> left_;
+    std::unique_ptr<BoolExpression> right_;
+};
+
+struct LogicalAndOp {
+    inline bool operator()(bool a, bool b) const {
+        return a && b;
+    }
 };

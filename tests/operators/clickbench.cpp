@@ -5,6 +5,7 @@
 #include <functional>
 
 #include "csv/time_transform.h"
+#include "expressions.h"
 #include "expressions/cmp_expressions.h"
 #include "operators/aggregation_operator.h"
 #include "operators/filter_operator.h"
@@ -956,6 +957,60 @@ TEST_F(ClickBenchTest, Query38) {
         std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols), 10, 1000);
 
     ExecuteAndVerify(std::move(sort_ptr), 38);
+}
+
+// SELECT TraficSourceID, SearchEngineID, AdvEngineID, CASE WHEN (SearchEngineID = 0 AND AdvEngineID
+// = 0) THEN Referer ELSE '' END AS Src, URL AS Dst, COUNT(*) AS PageViews FROM hits WHERE CounterID
+// = 62 AND EventDate >= '2013-07-01' AND EventDate <= '2013-07-31' AND IsRefresh = 0 GROUP BY
+// TraficSourceID, SearchEngineID, AdvEngineID, Src, Dst ORDER BY PageViews DESC LIMIT 10 OFFSET
+// 1000;
+TEST_F(ClickBenchTest, Query39) {
+    std::set<std::string> cols = {
+        "TraficSourceID", "SearchEngineID", "AdvEngineID", "Referer", "URL",
+        "CounterID",      "EventDate",      "IsRefresh"};
+    auto scan_ptr = std::make_unique<ScanOperator>(hits_file.string(), cols);
+
+    auto expr1 = std::make_unique<CompareExpression<std::equal_to<int32_t>, int32_t>>(
+        "CounterID", static_cast<int32_t>(62));
+    auto filter_ptr1 = std::make_unique<FilterOperator>(std::move(scan_ptr), std::move(expr1));
+
+    auto expr2 = std::make_unique<CompareExpression<std::greater_equal<int32_t>, int32_t>>(
+        "EventDate", *DateToInt("2013-07-01"));
+    auto filter_ptr2 = std::make_unique<FilterOperator>(std::move(filter_ptr1), std::move(expr2));
+
+    auto expr3 = std::make_unique<CompareExpression<std::less_equal<int32_t>, int32_t>>(
+        "EventDate", *DateToInt("2013-07-31"));
+    auto filter_ptr3 = std::make_unique<FilterOperator>(std::move(filter_ptr2), std::move(expr3));
+
+    auto expr4 = std::make_unique<CompareExpression<std::equal_to<int16_t>, int16_t>>(
+        "IsRefresh", static_cast<int16_t>(0));
+    auto filter_ptr4 = std::make_unique<FilterOperator>(std::move(filter_ptr3), std::move(expr4));
+
+    std::vector<std::pair<std::unique_ptr<IExpression>, std::string>> map_exprs;
+    auto condition = std::make_unique<LogicalExpression<LogicalAndOp>>(
+        std::make_unique<CompareExpression<std::equal_to<int16_t>, int16_t>>("SearchEngineID", 0),
+        std::make_unique<CompareExpression<std::equal_to<int16_t>, int16_t>>("AdvEngineID", 0));
+    map_exprs.emplace_back(
+        std::make_unique<CaseExpression>(
+            std::move(condition), std::make_unique<ColumnExpression>("Referer"),
+            std::make_unique<ConstantExpression<std::string>>(Type::string, ""), Type::string),
+        "Src");
+    map_exprs.emplace_back(std::make_unique<ColumnExpression>("URL"), "Dst");
+    auto map_ptr = std::make_unique<MapOperator>(std::move(filter_ptr4), std::move(map_exprs));
+
+    std::vector<std::pair<std::unique_ptr<AggregationState>, std::string>> states;
+    states.emplace_back(std::make_unique<CountState>(), "Dst");
+    std::vector<std::string> res_names = {"PageViews"};
+    std::vector<std::string> group_cols = {"TraficSourceID", "SearchEngineID", "AdvEngineID", "Src",
+                                           "Dst"};
+    auto agg_ptr = std::make_unique<AggregationOperator>(
+        std::move(map_ptr), std::move(states), std::move(res_names), std::move(group_cols));
+
+    auto sort_cols = std::vector<std::pair<std::string, bool>>{{"PageViews", true}};
+    auto sort_ptr =
+        std::make_unique<SortOperator>(std::move(agg_ptr), std::move(sort_cols), 10, 1000);
+
+    ExecuteAndVerify(std::move(sort_ptr), 39);
 }
 
 // SELECT URLHash, EventDate, COUNT(*) AS PageViews FROM hits WHERE CounterID = 62 AND EventDate >=

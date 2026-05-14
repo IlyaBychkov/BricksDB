@@ -3,9 +3,11 @@
 #include <cstdint>
 #include <memory>
 #include <regex>
+#include <stdexcept>
 
 #include "../scheme/batch.h"
 #include "../scheme/column.h"
+#include "cmp_expressions.h"
 
 struct IExpression {
     virtual ~IExpression() = default;
@@ -58,13 +60,13 @@ public:
                 if constexpr (requires { Operation()(std::declval<T>(), std::declval<U>()); }) {
                     using ResultT = decltype(Operation()(std::declval<T>(), std::declval<U>()));
 
-                    std::vector<ResultT> result;
-                    result.reserve(n);
+                    std::vector<ResultT> res;
+                    res.reserve(n);
                     for (size_t i = 0; i < n; ++i) {
-                        result.push_back(Operation()(lvec[i], rvec[i]));
+                        res.push_back(Operation()(lvec[i], rvec[i]));
                     }
 
-                    return Column(res_type_, std::move(result));
+                    return Column(res_type_, std::move(res));
                 } else {
                     throw std::runtime_error(
                         "Unsupported types in BinaryExpression: " + TypeToString(lcol.GetType()) +
@@ -114,13 +116,13 @@ public:
                 if constexpr (requires { Operation()(std::declval<T>()); }) {
                     using ResultT = decltype(Operation()(std::declval<T>()));
 
-                    std::vector<ResultT> result;
-                    result.reserve(n);
+                    std::vector<ResultT> res;
+                    res.reserve(n);
                     for (size_t i = 0; i < n; ++i) {
-                        result.push_back(Operation()(vec[i]));
+                        res.push_back(Operation()(vec[i]));
                     }
 
-                    return Column(res_type_, std::move(result));
+                    return Column(res_type_, std::move(res));
                 } else {
                     throw std::runtime_error("Unsupported type in UnaryExpression: " +
                                              TypeToString(col.GetType()));
@@ -152,32 +154,30 @@ struct StrLenOp {
     }
 };
 
-class RegexpReplaceExpression : public IExpression {
+struct RegexpReplaceExpression : public IExpression {
 public:
     RegexpReplaceExpression(std::unique_ptr<IExpression> operand, const std::string& pattern,
-                            const std::string& replacement)
-        : operand_(std::move(operand)), regex_(pattern), replacement_(replacement) {
-    }
+                            const std::string& replacement);
 
-    Column Evaluate(const Batch& batch) override {
-        Column col = operand_->Evaluate(batch);
-        size_t n = col.GetSize();
-
-        if (!std::holds_alternative<std::vector<std::string>>(col.Value())) {
-            throw std::runtime_error("RegexpReplaceExpression only supports String columns");
-        }
-
-        const auto& vec = std::get<std::vector<std::string>>(col.Value());
-        std::vector<std::string> res(n);
-        for (size_t i = 0; i < n; ++i) {
-            res[i] = std::regex_replace(vec[i], regex_, replacement_);
-        }
-
-        return Column(Type::string, std::move(res));
-    }
+    Column Evaluate(const Batch& batch) override;
 
 private:
     std::unique_ptr<IExpression> operand_;
     std::regex regex_;
     std::string replacement_;
+};
+
+struct CaseExpression : public IExpression {
+public:
+    CaseExpression(std::unique_ptr<BoolExpression> condition,
+                   std::unique_ptr<IExpression> then_expr, std::unique_ptr<IExpression> else_expr,
+                   Type res_type);
+
+    Column Evaluate(const Batch& batch) override;
+
+private:
+    std::unique_ptr<BoolExpression> condition_;
+    std::unique_ptr<IExpression> then_expr_;
+    std::unique_ptr<IExpression> else_expr_;
+    Type res_type_;
 };

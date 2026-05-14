@@ -1,0 +1,6 @@
+TraficSourceID,int16
+SearchEngineID,int16
+AdvEngineID,int16
+Src,string
+Dst,string
+PageViews,int64
