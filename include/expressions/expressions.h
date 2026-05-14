@@ -2,9 +2,12 @@
 
 #include <cstdint>
 #include <memory>
+#include <regex>
+#include <stdexcept>
 
 #include "../scheme/batch.h"
 #include "../scheme/column.h"
+#include "cmp_expressions.h"
 
 struct IExpression {
     virtual ~IExpression() = default;
@@ -57,13 +60,13 @@ public:
                 if constexpr (requires { Operation()(std::declval<T>(), std::declval<U>()); }) {
                     using ResultT = decltype(Operation()(std::declval<T>(), std::declval<U>()));
 
-                    std::vector<ResultT> result;
-                    result.reserve(n);
+                    std::vector<ResultT> res;
+                    res.reserve(n);
                     for (size_t i = 0; i < n; ++i) {
-                        result.push_back(Operation()(lvec[i], rvec[i]));
+                        res.push_back(Operation()(lvec[i], rvec[i]));
                     }
 
-                    return Column(res_type_, std::move(result));
+                    return Column(res_type_, std::move(res));
                 } else {
                     throw std::runtime_error(
                         "Unsupported types in BinaryExpression: " + TypeToString(lcol.GetType()) +
@@ -113,13 +116,13 @@ public:
                 if constexpr (requires { Operation()(std::declval<T>()); }) {
                     using ResultT = decltype(Operation()(std::declval<T>()));
 
-                    std::vector<ResultT> result;
-                    result.reserve(n);
+                    std::vector<ResultT> res;
+                    res.reserve(n);
                     for (size_t i = 0; i < n; ++i) {
-                        result.push_back(Operation()(vec[i]));
+                        res.push_back(Operation()(vec[i]));
                     }
 
-                    return Column(res_type_, std::move(result));
+                    return Column(res_type_, std::move(res));
                 } else {
                     throw std::runtime_error("Unsupported type in UnaryExpression: " +
                                              TypeToString(col.GetType()));
@@ -139,8 +142,42 @@ struct ExtractMinuteOp {
     }
 };
 
+struct TruncMinuteOp {
+    int64_t operator()(const int64_t timestamp) const {
+        return timestamp - timestamp % 60;
+    }
+};
+
 struct StrLenOp {
     int32_t operator()(const std::string& str) const {
         return static_cast<int32_t>(str.size());
     }
+};
+
+struct RegexpReplaceExpression : public IExpression {
+public:
+    RegexpReplaceExpression(std::unique_ptr<IExpression> operand, const std::string& pattern,
+                            const std::string& replacement);
+
+    Column Evaluate(const Batch& batch) override;
+
+private:
+    std::unique_ptr<IExpression> operand_;
+    std::regex regex_;
+    std::string replacement_;
+};
+
+struct CaseExpression : public IExpression {
+public:
+    CaseExpression(std::unique_ptr<BoolExpression> condition,
+                   std::unique_ptr<IExpression> then_expr, std::unique_ptr<IExpression> else_expr,
+                   Type res_type);
+
+    Column Evaluate(const Batch& batch) override;
+
+private:
+    std::unique_ptr<BoolExpression> condition_;
+    std::unique_ptr<IExpression> then_expr_;
+    std::unique_ptr<IExpression> else_expr_;
+    Type res_type_;
 };
