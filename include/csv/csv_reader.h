@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+struct CsvBatcher;
+
 class CsvReader {
 public:
     CsvReader() = default;
@@ -18,8 +20,6 @@ public:
 
     bool HasNext();
 
-    bool IsCrashed();
-
     std::expected<std::vector<std::string>, std::string> NextStr();
 
 private:
@@ -32,6 +32,9 @@ private:
     CsvReader(const std::string& filename);
 
     bool Open();
+    friend struct CsvBatcher;
+
+    bool IsCrashed();
 };
 
 std::expected<CsvReader, std::string> CreateCsvReader(const std::string& csv_filename);

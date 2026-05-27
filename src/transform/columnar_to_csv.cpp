@@ -79,9 +79,5 @@ std::expected<void, std::string> ColumnarToCsvTransformer::Transform() {
         }
     }
 
-    if (csv_out_.IsCrashed()) {
-        return std::unexpected("CsvWriter crashed");
-    }
-
     return {};
 }

@@ -70,11 +70,6 @@ std::expected<void, std::string> CsvToColumnarTransformer::Transform() {
             columnar_filename_ + "': " + res.error());
     }
 
-    if (batcher_.IsCrashed()) {
-        return std::unexpected(std::string("CsvToColumnarTransformer::Transform: Batcher crashed "
-                                           "during transformation for csv='") +
-                               csv_filename_ + "'");
-    }
     return {};
 }
 

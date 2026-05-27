@@ -27,10 +27,6 @@ CsvBatcher::CsvBatcher(Schema&& schema, CsvReader&& reader, int64_t max_batch_si
       max_batch_size_bytes_(max_batch_size_bytes) {
 }
 
-bool CsvBatcher::IsCrashed() {
-    return reader_.IsCrashed();
-}
-
 bool CsvBatcher::HasNextBatch() {
     return reader_.HasNext();
 }

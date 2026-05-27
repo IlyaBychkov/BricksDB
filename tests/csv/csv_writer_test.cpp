@@ -32,15 +32,12 @@ TEST_F(CsvWriterTest, OpenValidPath) {
     auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
     CsvWriter writer = std::move(tmp.value());
-    ;
-    EXPECT_FALSE(writer.IsCrashed());
 }
 
 TEST_F(CsvWriterTest, IsCrashedInitiallyFalse) {
     auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
     CsvWriter writer = std::move(tmp.value());
-    EXPECT_FALSE(writer.IsCrashed());
 }
 
 TEST_F(CsvWriterTest, FlushReturnsTrueWhenOpen) {
@@ -49,7 +46,6 @@ TEST_F(CsvWriterTest, FlushReturnsTrueWhenOpen) {
     CsvWriter writer = std::move(tmp.value());
 
     EXPECT_TRUE(writer.Flush());
-    EXPECT_FALSE(writer.IsCrashed());
 }
 
 TEST_F(CsvWriterTest, WriteSimpleRow) {

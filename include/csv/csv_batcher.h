@@ -18,7 +18,6 @@ public:
     CsvBatcher(CsvBatcher&&) = default;
     CsvBatcher& operator=(CsvBatcher&&) = default;
 
-    bool IsCrashed();
     bool HasNextBatch();
     std::expected<Batch, std::string> NextBatch();
 
@@ -27,7 +26,7 @@ public:
 private:
     Schema schema_;
     CsvReader reader_;
-    int64_t max_batch_size_bytes_;  // in bytes
+    int64_t max_batch_size_bytes_;
 };
 
 std::expected<CsvBatcher, std::string> CreateCsvBatcher(const std::string& csv_file,

@@ -18,8 +18,6 @@ public:
     CsvWriter(CsvWriter&&) = default;
     CsvWriter& operator=(CsvWriter&&) = default;
 
-    bool IsCrashed();
-
     bool Flush();
 
     std::expected<void, std::string> WriteRow(const std::vector<std::string>& fields,
@@ -28,6 +26,9 @@ public:
     std::expected<void, std::string> WriteBatch(const Batch& batch);
 
 private:
+    friend std::expected<void, std::string> WriteSchemaToCsv(Schema schema,
+                                                             const std::string& filename);
+
     std::string filename_;
     std::ofstream fout_;
     bool crashed_ = false;
@@ -37,6 +38,8 @@ private:
     CsvWriter(const std::string& filename);
 
     bool Open();
+
+    bool IsCrashed();
 };
 
 std::expected<CsvWriter, std::string> CreateCsvWriter(const std::string& csv_filename);

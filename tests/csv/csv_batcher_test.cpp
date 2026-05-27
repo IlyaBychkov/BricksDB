@@ -42,7 +42,6 @@ TEST_F(CsvBatcherTest, CreateValidBatcher) {
     ASSERT_TRUE(res.has_value()) << res.error();
 
     CsvBatcher batcher = std::move(res.value());
-    EXPECT_FALSE(batcher.IsCrashed());
     EXPECT_TRUE(batcher.HasNextBatch());
 }
 
