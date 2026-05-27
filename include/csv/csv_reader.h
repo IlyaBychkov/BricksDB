@@ -9,7 +9,6 @@ struct CsvBatcher;
 
 class CsvReader {
 public:
-    CsvReader() = default;
     ~CsvReader();
 
     CsvReader(const CsvReader&) = delete;

@@ -9,7 +9,6 @@
 
 struct CsvBatcher {
 public:
-    CsvBatcher() = default;
     CsvBatcher(Schema&& schema, CsvReader&& reader, int64_t max_batch_size_bytes);
 
     CsvBatcher(const CsvBatcher&) = delete;

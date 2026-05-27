@@ -17,13 +17,11 @@ public:
 private:
     std::string csv_filename_;
     std::string schema_filename_;
-    int64_t max_batch_size_bytes_;
 
     std::string columnar_filename_;
 
     CsvBatcher batcher_;
     std::ofstream fout_;
 
-    std::expected<void, std::string> Prepare();
     std::expected<void, std::string> WriteBatch(const Batch& batch);
 };

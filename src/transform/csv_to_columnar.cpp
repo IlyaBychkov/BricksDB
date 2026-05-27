@@ -1,6 +1,7 @@
 #include "transform/csv_to_columnar.h"
 
 #include <iostream>
+#include <stdexcept>
 
 #include "transform/metadata.h"
 
@@ -10,8 +11,14 @@ CsvToColumnarTransformer::CsvToColumnarTransformer(const std::string& csv_filena
                                                    int64_t max_batch_size_bytes)
     : csv_filename_(csv_filename),
       schema_filename_(schema_filename),
-      max_batch_size_bytes_(max_batch_size_bytes),
-      columnar_filename_(columnar_filename) {
+      columnar_filename_(columnar_filename),
+      batcher_(CreateCsvBatcher(csv_filename, schema_filename, max_batch_size_bytes).value()) {
+    fout_.open(columnar_filename_, std::ios::binary);
+    if (!fout_.is_open()) {
+        throw std::runtime_error(
+            std::string("CsvToColumnarTransformer::Prepare: Failed to open columnar file '") +
+            columnar_filename_ + "'");
+    }
 }
 
 CsvToColumnarTransformer::~CsvToColumnarTransformer() {
@@ -20,29 +27,7 @@ CsvToColumnarTransformer::~CsvToColumnarTransformer() {
     }
 }
 
-std::expected<void, std::string> CsvToColumnarTransformer::Prepare() {
-    auto tmp = CreateCsvBatcher(csv_filename_, schema_filename_, max_batch_size_bytes_);
-    if (!tmp) {
-        return std::unexpected(
-            std::string("CsvToColumnarTransformer::Prepare: CreateCsvBatcher failed for csv='") +
-            csv_filename_ + "' schema='" + schema_filename_ + "': " + tmp.error());
-    }
-    batcher_ = std::move(tmp.value());
-    fout_.open(columnar_filename_, std::ios::binary);
-    if (!fout_.is_open()) {
-        return std::unexpected(
-            std::string("CsvToColumnarTransformer::Prepare: Failed to open columnar file '") +
-            columnar_filename_ + "'");
-    }
-    return {};
-}
-
 std::expected<void, std::string> CsvToColumnarTransformer::Transform() {
-    auto prepare_res = Prepare();
-    if (!prepare_res) {
-        return std::unexpected("Prepare failed: " + prepare_res.error());
-    }
-
     Metadata metadata(batcher_.GetSchema());
 
     while (batcher_.HasNextBatch()) {
