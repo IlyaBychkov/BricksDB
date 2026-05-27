@@ -5,12 +5,12 @@
 #include <vector>
 
 #include "column.h"
-#include "scheme.h"
+#include "schema.h"
 
 struct Batch {
 public:
-    Batch(const std::vector<Column>& data, const Scheme& scheme);
-    Batch(std::vector<Column>&& data, const Scheme& scheme);
+    Batch(const std::vector<Column>& data, const Schema& schema);
+    Batch(std::vector<Column>&& data, const Schema& schema);
 
     Batch(const Batch&) = default;
     Batch& operator=(const Batch&) = default;
@@ -23,8 +23,8 @@ public:
     size_t ColumnsCnt() const;
     size_t RowsCnt() const;
 
-    Scheme& GetScheme();
-    const Scheme& GetScheme() const;
+    Schema& GetSchema();
+    const Schema& GetSchema() const;
 
     Type GetColumnType(size_t ind) const;
     const std::string& GetColumnName(size_t ind) const;
@@ -37,7 +37,7 @@ public:
     Column& GetColumn(const std::string& name);
     const Column& GetColumn(const std::string& name) const;
 
-    void AddColumn(const Column& columnn, const SchemeElement& se);
+    void AddColumn(const Column& columnn, const SchemaElement& se);
 
     void Merge(Batch&& other);
 
@@ -45,10 +45,10 @@ public:
 
 private:
     std::vector<Column> data_;
-    Scheme scheme_;
+    Schema schema_;
 };
 
-std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std::ifstream& fin,
+std::expected<Batch, std::string> CreateBatchFromFile(const Schema& schema, std::ifstream& fin,
                                                       int64_t rows_cnt);
 
-std::expected<void, std::string> WriteBatchToCSV(const Batch& batch, const std::string& filename);
+std::expected<void, std::string> WriteBatchToCsv(const Batch& batch, const std::string& filename);

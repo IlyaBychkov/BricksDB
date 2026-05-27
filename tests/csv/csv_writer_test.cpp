@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 
-class CSVWriterTest : public ::testing::Test {
+class CsvWriterTest : public ::testing::Test {
 protected:
     std::filesystem::path test_csv_file;
     std::string test_csv_str;
@@ -28,34 +28,34 @@ protected:
     }
 };
 
-TEST_F(CSVWriterTest, OpenValidPath) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, OpenValidPath) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
     ;
     EXPECT_FALSE(writer.IsCrashed());
 }
 
-TEST_F(CSVWriterTest, IsCrashedInitiallyFalse) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, IsCrashedInitiallyFalse) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
     EXPECT_FALSE(writer.IsCrashed());
 }
 
-TEST_F(CSVWriterTest, FlushReturnsTrueWhenOpen) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, FlushReturnsTrueWhenOpen) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
 
     EXPECT_TRUE(writer.Flush());
     EXPECT_FALSE(writer.IsCrashed());
 }
 
-TEST_F(CSVWriterTest, WriteSimpleRow) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, WriteSimpleRow) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
 
     auto res = writer.WriteRow({"id", "name", "value"}, true);
     ASSERT_TRUE(res.has_value()) << res.error();
@@ -64,10 +64,10 @@ TEST_F(CSVWriterTest, WriteSimpleRow) {
     EXPECT_EQ(content, "id,name,value\n");
 }
 
-TEST_F(CSVWriterTest, WriteWithoutFlushThenManualFlush) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, WriteWithoutFlushThenManualFlush) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
 
     auto res = writer.WriteRow({"a", "b", "c"}, false);
     ASSERT_TRUE(res.has_value()) << res.error();
@@ -77,10 +77,10 @@ TEST_F(CSVWriterTest, WriteWithoutFlushThenManualFlush) {
     EXPECT_EQ(content, "a,b,c\n");
 }
 
-TEST_F(CSVWriterTest, WriteMultipleRows) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, WriteMultipleRows) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
 
     auto r1 = writer.WriteRow({"a", "b", "c"}, false);
     ASSERT_TRUE(r1.has_value()) << r1.error();
@@ -93,10 +93,10 @@ TEST_F(CSVWriterTest, WriteMultipleRows) {
     EXPECT_EQ(content, "a,b,c\n1,2,3\nx,y,z\n");
 }
 
-TEST_F(CSVWriterTest, WriteFieldWithComma) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, WriteFieldWithComma) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
 
     auto res = writer.WriteRow({"normal", "field, with comma", "end"}, true);
     ASSERT_TRUE(res.has_value()) << res.error();
@@ -105,10 +105,10 @@ TEST_F(CSVWriterTest, WriteFieldWithComma) {
     EXPECT_EQ(content, "normal,\"field, with comma\",end\n");
 }
 
-TEST_F(CSVWriterTest, WriteFieldWithQuotes) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, WriteFieldWithQuotes) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
 
     auto res = writer.WriteRow({"normal", "say \"hello\" world", "end"}, true);
     ASSERT_TRUE(res.has_value()) << res.error();
@@ -117,10 +117,10 @@ TEST_F(CSVWriterTest, WriteFieldWithQuotes) {
     EXPECT_EQ(content, "normal,\"say \"\"hello\"\" world\",end\n");
 }
 
-TEST_F(CSVWriterTest, WriteFieldWithNewline) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, WriteFieldWithNewline) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
 
     auto res = writer.WriteRow({"normal", "line1\nline2", "end"}, true);
     ASSERT_TRUE(res.has_value()) << res.error();
@@ -129,10 +129,10 @@ TEST_F(CSVWriterTest, WriteFieldWithNewline) {
     EXPECT_EQ(content, "normal,\"line1\nline2\",end\n");
 }
 
-TEST_F(CSVWriterTest, WriteFieldWithAllSpecialChars) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, WriteFieldWithAllSpecialChars) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
 
     auto res = writer.WriteRow({"complex", "has \"quotes\", commas,\nand newlines", "end"}, true);
     ASSERT_TRUE(res.has_value()) << res.error();
@@ -141,10 +141,10 @@ TEST_F(CSVWriterTest, WriteFieldWithAllSpecialChars) {
     EXPECT_EQ(content, "complex,\"has \"\"quotes\"\", commas,\nand newlines\",end\n");
 }
 
-TEST_F(CSVWriterTest, WriteFieldWithTrailingSpace) {
-    auto tmp = CreateCSVWriter(test_csv_str);
+TEST_F(CsvWriterTest, WriteFieldWithTrailingSpace) {
+    auto tmp = CreateCsvWriter(test_csv_str);
     ASSERT_TRUE(tmp.has_value()) << tmp.error();
-    CSVWriter writer = std::move(tmp.value());
+    CsvWriter writer = std::move(tmp.value());
 
     auto res = writer.WriteRow({"normal", "trailing space ", "end"}, true);
     ASSERT_TRUE(res.has_value()) << res.error();
@@ -153,11 +153,11 @@ TEST_F(CSVWriterTest, WriteFieldWithTrailingSpace) {
     EXPECT_EQ(content, "normal,trailing space ,end\n");
 }
 
-TEST_F(CSVWriterTest, DestructorFlushesData) {
+TEST_F(CsvWriterTest, DestructorFlushesData) {
     {
-        auto tmp = CreateCSVWriter(test_csv_str);
+        auto tmp = CreateCsvWriter(test_csv_str);
         ASSERT_TRUE(tmp.has_value()) << tmp.error();
-        CSVWriter writer = std::move(tmp.value());
+        CsvWriter writer = std::move(tmp.value());
 
         auto res = writer.WriteRow({"auto", "flush"}, false);
         ASSERT_TRUE(res.has_value()) << res.error();

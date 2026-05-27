@@ -5,16 +5,16 @@
 #include <string>
 #include <vector>
 
-class CSVReader {
+class CsvReader {
 public:
-    CSVReader() = default;
-    ~CSVReader();
+    CsvReader() = default;
+    ~CsvReader();
 
-    CSVReader(const CSVReader&) = delete;
-    CSVReader operator=(const CSVReader&) = delete;
+    CsvReader(const CsvReader&) = delete;
+    CsvReader operator=(const CsvReader&) = delete;
 
-    CSVReader(CSVReader&&) = default;
-    CSVReader& operator=(CSVReader&&) = default;
+    CsvReader(CsvReader&&) = default;
+    CsvReader& operator=(CsvReader&&) = default;
 
     bool HasNext();
 
@@ -27,11 +27,11 @@ private:
     std::ifstream fin_;
     bool crashed_ = false;
 
-    friend std::expected<CSVReader, std::string> CreateCSVReader(const std::string& csv_filename);
+    friend std::expected<CsvReader, std::string> CreateCsvReader(const std::string& csv_filename);
 
-    CSVReader(const std::string& filename);
+    CsvReader(const std::string& filename);
 
     bool Open();
 };
 
-std::expected<CSVReader, std::string> CreateCSVReader(const std::string& csv_filename);
+std::expected<CsvReader, std::string> CreateCsvReader(const std::string& csv_filename);

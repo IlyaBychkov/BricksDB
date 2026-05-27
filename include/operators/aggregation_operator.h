@@ -6,8 +6,8 @@
 
 #include "operators/base_operator.h"
 #include "operators/group_key.h"
-#include "scheme/column.h"
-#include "scheme/type.h"
+#include "schema/column.h"
+#include "schema/type.h"
 
 enum class AggregationType { COUNT, SUM, AVG, MIN, MAX, COUNT_DISTINCT };
 

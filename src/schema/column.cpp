@@ -1,8 +1,8 @@
-#include "scheme/column.h"
+#include "schema/column.h"
 
 #include <fstream>
 
-#include "scheme/overloaded.h"
+#include "schema/overloaded.h"
 
 Column::Column(Type type) : type_(type) {
     if (type_ == Type::int64 || type_ == Type::timestamp) {

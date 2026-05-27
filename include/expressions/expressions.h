@@ -5,8 +5,8 @@
 #include <regex>
 #include <stdexcept>
 
-#include "../scheme/batch.h"
-#include "../scheme/column.h"
+#include "../schema/batch.h"
+#include "../schema/column.h"
 #include "cmp_expressions.h"
 
 struct IExpression {

@@ -1,0 +1,2 @@
+RegionID,int32
+COUNT(DISTINCT UserID),int64

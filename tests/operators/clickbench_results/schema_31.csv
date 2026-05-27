@@ -1,0 +1,5 @@
+WatchID,int64
+ClientIP,int32
+COUNT(*),int64
+SUM(IsRefresh),int64
+AVG(ResolutionWidth),int64

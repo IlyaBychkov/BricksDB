@@ -4,9 +4,9 @@
 #include <unordered_set>
 
 #include "operators/group_key.h"
-#include "scheme/batch.h"
-#include "scheme/column.h"
-#include "scheme/scheme.h"
+#include "schema/batch.h"
+#include "schema/column.h"
+#include "schema/schema.h"
 
 CountState::CountState() = default;
 
@@ -121,12 +121,12 @@ std::optional<Batch> AggregationOperator::Next() {
             }
         }
 
-        Scheme scheme;
+        Schema schema;
         std::vector<Column> columns;
         for (size_t i = 0; i < prototypes_.size(); ++i) {
             const auto& [agg_state, column_name] = prototypes_[i];
             Column col = agg_state->GetResult();
-            scheme.AddElement(SchemeElement(res_names_[i], col.GetType()));
+            schema.AddElement(SchemaElement(res_names_[i], col.GetType()));
             columns.push_back(col);
         }
 
@@ -134,7 +134,7 @@ std::optional<Batch> AggregationOperator::Next() {
             return std::nullopt;
         }
 
-        return Batch(std::move(columns), std::move(scheme));
+        return Batch(std::move(columns), std::move(schema));
     }
 
     std::unordered_set<GroupKey, GroupKeyHash> group_keys;
@@ -177,17 +177,17 @@ std::optional<Batch> AggregationOperator::Next() {
         }
     }
 
-    Scheme scheme;
+    Schema schema;
     std::vector<Column> columns;
 
     for (size_t i = 0; i < keys_types.size(); ++i) {
         columns.emplace_back(keys_types[i]);
-        scheme.AddElement(SchemeElement(group_columns_names_[i], keys_types[i]));
+        schema.AddElement(SchemaElement(group_columns_names_[i], keys_types[i]));
     }
     for (size_t i = 0; i < prototypes_.size(); ++i) {
         const auto& [agg_state, column_name] = prototypes_[i];
         Type type = agg_state->GetResult().GetType();
-        scheme.AddElement(SchemeElement(res_names_[i], type));
+        schema.AddElement(SchemaElement(res_names_[i], type));
         columns.emplace_back(type);
     }
 
@@ -208,5 +208,5 @@ std::optional<Batch> AggregationOperator::Next() {
         return std::nullopt;
     }
 
-    return Batch(std::move(columns), std::move(scheme));
+    return Batch(std::move(columns), std::move(schema));
 }

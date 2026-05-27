@@ -1,6 +1,6 @@
 #include "operators/map_operator.h"
 
-#include "scheme/column.h"
+#include "schema/column.h"
 
 MapOperator::MapOperator(
     std::unique_ptr<IOperator> child,
@@ -18,7 +18,7 @@ std::optional<Batch> MapOperator::Next() {
     std::vector<std::pair<Column, std::string>> new_columns;
     for (auto& [expr, name] : expressions_) {
         Column col = expr->Evaluate(batch);
-        batch.AddColumn(std::move(col), SchemeElement(name, col.GetType()));
+        batch.AddColumn(std::move(col), SchemaElement(name, col.GetType()));
     }
     return batch;
 }

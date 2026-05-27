@@ -1,4 +1,4 @@
-#include "scheme/batch.h"
+#include "schema/batch.h"
 
 #include <cstdint>
 #include <fstream>
@@ -7,29 +7,29 @@
 
 #include "csv_writer.h"
 
-Batch::Batch(const std::vector<Column>& data, const Scheme& scheme) : data_(data), scheme_(scheme) {
+Batch::Batch(const std::vector<Column>& data, const Schema& schema) : data_(data), schema_(schema) {
     if (!Validate()) {
         throw std::runtime_error("Invalid Batch construction");
     }
 }
 
-Batch::Batch(std::vector<Column>&& data, const Scheme& scheme)
-    : data_(std::move(data)), scheme_(scheme) {
+Batch::Batch(std::vector<Column>&& data, const Schema& schema)
+    : data_(std::move(data)), schema_(schema) {
     if (!Validate()) {
         throw std::runtime_error("Invalid Batch construction");
     }
 }
 
 std::expected<void, std::string> Batch::Validate() const {
-    if (data_.size() != scheme_.GetSize()) {
+    if (data_.size() != schema_.GetSize()) {
         return std::unexpected(
             "Batch::Validate: Column count mismatch: data=" + std::to_string(data_.size()) +
-            ", scheme=" + std::to_string(scheme_.GetSize()));
+            ", schema=" + std::to_string(schema_.GetSize()));
     }
     for (size_t i = 0; i < data_.size(); ++i) {
-        if (data_[i].GetType() != scheme_.GetType(i)) {
+        if (data_[i].GetType() != schema_.GetType(i)) {
             return std::unexpected("Batch::Validate: Type mismatch at index " + std::to_string(i) +
-                                   ": expected " + TypeToString(scheme_.GetType(i)) + ", but got " +
+                                   ": expected " + TypeToString(schema_.GetType(i)) + ", but got " +
                                    TypeToString(data_[i].GetType()));
         }
         if (data_[i].GetSize() != data_[0].GetSize()) {
@@ -53,19 +53,19 @@ size_t Batch::RowsCnt() const {
     return data_[0].GetSize();
 }
 
-Scheme& Batch::GetScheme() {
-    return scheme_;
+Schema& Batch::GetSchema() {
+    return schema_;
 }
-const Scheme& Batch::GetScheme() const {
-    return scheme_;
+const Schema& Batch::GetSchema() const {
+    return schema_;
 }
 
 Type Batch::GetColumnType(size_t ind) const {
-    return scheme_.GetType(ind);
+    return schema_.GetType(ind);
 }
 
 const std::string& Batch::GetColumnName(size_t ind) const {
-    return scheme_.GetName(ind);
+    return schema_.GetName(ind);
 }
 
 Column& Batch::GetColumn(size_t ind) {
@@ -100,16 +100,16 @@ const Column& Batch::GetColumn(const std::string& name) const {
     throw std::runtime_error("Column not found: " + name);
 }
 
-void Batch::AddColumn(const Column& columnn, const SchemeElement& se) {
+void Batch::AddColumn(const Column& columnn, const SchemaElement& se) {
     data_.push_back(columnn);
-    scheme_.AddElement(se);
+    schema_.AddElement(se);
 }
 
 void Batch::Merge(Batch&& other) {
     if (ColumnsCnt() != other.ColumnsCnt()) {
         throw std::runtime_error("Batch::Merge: Column count mismatch");
     }
-    // TODO: GetScheme() == other.GetScheme()
+    // TODO: GetSchema() == other.GetSchema()
     for (size_t i = 0; i < ColumnsCnt(); ++i) {
         std::visit(
             [col = other.GetColumn(i).Value()]<typename T>(std::vector<T>& vec) {
@@ -126,18 +126,18 @@ void Batch::ClearValues() {
     }
 }
 
-std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std::ifstream& fin,
+std::expected<Batch, std::string> CreateBatchFromFile(const Schema& schema, std::ifstream& fin,
                                                       int64_t rows_cnt) {
     std::vector<Column> data;
-    for (size_t i = 0; i < scheme.GetSize(); ++i) {
-        auto res = ReadColumnFromColumnar(scheme.GetType(i), fin, rows_cnt);
+    for (size_t i = 0; i < schema.GetSize(); ++i) {
+        auto res = ReadColumnFromColumnar(schema.GetType(i), fin, rows_cnt);
         if (!res) {
             throw std::runtime_error(res.error());
         }
         data.push_back(std::move(*res));
     }
 
-    Batch batch(std::move(data), scheme);
+    Batch batch(std::move(data), schema);
     auto res = batch.Validate();
     if (!res) {
         throw std::runtime_error(res.error());
@@ -146,15 +146,15 @@ std::expected<Batch, std::string> CreateBatchFromFile(const Scheme& scheme, std:
     return batch;
 }
 
-std::expected<void, std::string> WriteBatchToCSV(const Batch& batch, const std::string& filename) {
-    auto t = CreateCSVWriter(filename);
+std::expected<void, std::string> WriteBatchToCsv(const Batch& batch, const std::string& filename) {
+    auto t = CreateCsvWriter(filename);
     if (!t.has_value()) {
-        return std::unexpected("WriteBatchToCSV: Failed to create CSV writer: " + t.error());
+        return std::unexpected("WriteBatchToCsv: Failed to create Csv writer: " + t.error());
     }
-    CSVWriter writer = std::move(*t);
+    CsvWriter writer = std::move(*t);
     auto res = writer.WriteBatch(batch);
     if (!res) {
-        return std::unexpected("WriteBatchToCSV: Failed to write batch to CSV: " + res.error());
+        return std::unexpected("WriteBatchToCsv: Failed to write batch to Csv: " + res.error());
     }
     return {};
 }

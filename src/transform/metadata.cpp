@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "scheme/scheme.h"
-#include "scheme/type.h"
+#include "schema/schema.h"
+#include "schema/type.h"
 
 // TODO: Написать функции WriteNum, WriteString, WriteVector и читалки к ним
 
@@ -12,8 +12,8 @@ void Metadata::AddRowGroup(int64_t offset, int64_t rows) {
     rows_.push_back(rows);
 }
 
-Scheme& Metadata::GetScheme() {
-    return scheme_;
+Schema& Metadata::GetSchema() {
+    return schema_;
 }
 std::vector<int64_t>& Metadata::GetOffsets() {
     return offsets_;
@@ -29,11 +29,11 @@ size_t Metadata::BatchesCnt() const {
 std::expected<void, std::string> WriteMetadataToFile(Metadata metadata, std::ostream& fout) {
     try {
         int64_t sum = 0;
-        int64_t scheme_size = metadata.GetScheme().GetSize();
-        fout.write(reinterpret_cast<char*>(&scheme_size), sizeof(int64_t));
+        int64_t schema_size = metadata.GetSchema().GetSize();
+        fout.write(reinterpret_cast<char*>(&schema_size), sizeof(int64_t));
         sum += sizeof(int64_t);
 
-        for (auto& elem : metadata.GetScheme().GetAllElements()) {
+        for (auto& elem : metadata.GetSchema().GetAllElements()) {
             int64_t type_int = static_cast<int64_t>(elem.GetType());
             fout.write(reinterpret_cast<char*>(&type_int), sizeof(int64_t));
             sum += sizeof(int64_t);
@@ -72,11 +72,11 @@ std::expected<Metadata, std::string> ReadMetadataFromFile(std::istream& fin) {
         fin.read(reinterpret_cast<char*>(&meta_size), sizeof(int64_t));
 
         fin.seekg(-meta_size, std::ios::end);
-        int64_t scheme_size;
-        fin.read(reinterpret_cast<char*>(&scheme_size), sizeof(int64_t));
+        int64_t schema_size;
+        fin.read(reinterpret_cast<char*>(&schema_size), sizeof(int64_t));
 
-        std::vector<SchemeElement> elements;
-        for (int64_t i = 0; i < scheme_size; ++i) {
+        std::vector<SchemaElement> elements;
+        for (int64_t i = 0; i < schema_size; ++i) {
             int64_t type_int;
             fin.read(reinterpret_cast<char*>(&type_int), sizeof(int64_t));
 
@@ -88,7 +88,7 @@ std::expected<Metadata, std::string> ReadMetadataFromFile(std::istream& fin) {
 
             elements.emplace_back(name, static_cast<Type>(type_int));
         }
-        Metadata metadata = Metadata(Scheme(elements));
+        Metadata metadata = Metadata(Schema(elements));
 
         int64_t row_groups;
         fin.read(reinterpret_cast<char*>(&row_groups), sizeof(int64_t));

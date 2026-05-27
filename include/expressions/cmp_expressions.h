@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <memory>
 
-#include "../scheme/batch.h"
-#include "scheme/column.h"
+#include "../schema/batch.h"
+#include "schema/column.h"
 
 struct BoolExpression {
     virtual ~BoolExpression() = default;

@@ -1,4 +1,4 @@
-#include "scheme/type.h"
+#include "schema/type.h"
 
 #include <stdexcept>
 #include <string>

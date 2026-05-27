@@ -1,34 +1,34 @@
 #include "csv_reader.h"
 
-CSVReader::CSVReader(const std::string& filename) : filename_(filename) {
+CsvReader::CsvReader(const std::string& filename) : filename_(filename) {
 }
 
-CSVReader::~CSVReader() {
+CsvReader::~CsvReader() {
     if (fin_.is_open()) {
         fin_.close();
     }
 }
 
-bool CSVReader::Open() {
+bool CsvReader::Open() {
     fin_.open(filename_);
     return fin_.is_open();
 }
 
-bool CSVReader::IsCrashed() {
+bool CsvReader::IsCrashed() {
     return crashed_;
 }
 
-bool CSVReader::HasNext() {
+bool CsvReader::HasNext() {
     return fin_.is_open() && !crashed_ && fin_.peek() != EOF;
 }
 
-std::expected<std::vector<std::string>, std::string> CSVReader::NextStr() {
+std::expected<std::vector<std::string>, std::string> CsvReader::NextStr() {
     if (crashed_) {
-        return std::unexpected("CSVReader::NextStr: reader is crashed (" + filename_ + ")");
+        return std::unexpected("CsvReader::NextStr: reader is crashed (" + filename_ + ")");
     }
 
     if (!fin_.is_open()) {
-        return std::unexpected("CSVReader::NextStr: file is not open (" + filename_ + ")");
+        return std::unexpected("CsvReader::NextStr: file is not open (" + filename_ + ")");
     }
 
     std::vector<std::string> fields;
@@ -63,13 +63,13 @@ std::expected<std::vector<std::string>, std::string> CSVReader::NextStr() {
     }
 
     crashed_ = true;
-    return std::unexpected("CSVReader::NextStr: no more records in file (" + filename_ + ")");
+    return std::unexpected("CsvReader::NextStr: no more records in file (" + filename_ + ")");
 }
 
-std::expected<CSVReader, std::string> CreateCSVReader(const std::string& csv_filename) {
-    CSVReader reader(csv_filename);
+std::expected<CsvReader, std::string> CreateCsvReader(const std::string& csv_filename) {
+    CsvReader reader(csv_filename);
     if (!reader.Open()) {
-        return std::unexpected("CreateCSVReader: Failed to open CSV file: " + csv_filename);
+        return std::unexpected("CreateCsvReader: Failed to open Csv file: " + csv_filename);
     }
     return reader;
 }

@@ -2,7 +2,7 @@
 
 #include <optional>
 
-#include "scheme/batch.h"
+#include "schema/batch.h"
 
 class IOperator {
 public:

@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <string>
 
-#include "scheme/batch.h"
-#include "scheme/type.h"
+#include "schema/batch.h"
+#include "schema/type.h"
 #include "transform/metadata.h"
 
 ScanOperator::ScanOperator(const std::string& filename, const std::set<std::string>& columns)
@@ -34,14 +34,14 @@ std::optional<Batch> ScanOperator::Next() {
     if (batch_num_ >= metadata_.BatchesCnt()) {
         return std::nullopt;
     }
-    Scheme& scheme = metadata_.GetScheme();
-    size_t columns_cnt = scheme.GetSize();
+    Schema& schema = metadata_.GetSchema();
+    size_t columns_cnt = schema.GetSize();
     std::vector<Column> res_columns;
-    Scheme res_scheme;
+    Schema res_schema;
 
     for (size_t i = 0; i < columns_cnt; ++i) {
-        std::string column_name = scheme.GetName(i);
-        Type column_type = scheme.GetType(i);
+        std::string column_name = schema.GetName(i);
+        Type column_type = schema.GetType(i);
         int64_t rows_cnt = metadata_.GetRowsCnt()[batch_num_];
         if (!columns_.empty() && !columns_.contains(column_name)) {
             if (column_type == Type::string) {
@@ -54,7 +54,7 @@ std::optional<Batch> ScanOperator::Next() {
             }
             continue;
         }
-        res_scheme.AddElement(scheme.GetElement(i));
+        res_schema.AddElement(schema.GetElement(i));
         auto column = ReadColumnFromColumnar(column_type, fin_, rows_cnt);
         if (!column) {
             return std::nullopt;
@@ -62,5 +62,5 @@ std::optional<Batch> ScanOperator::Next() {
         res_columns.push_back(std::move(*column));
     }
     ++batch_num_;
-    return Batch(std::move(res_columns), std::move(res_scheme));
+    return Batch(std::move(res_columns), std::move(res_schema));
 }

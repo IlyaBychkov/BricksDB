@@ -1,5 +1,5 @@
 add_subdirectory(csv)
-add_subdirectory(scheme)
+add_subdirectory(schema)
 add_subdirectory(transform)
 add_subdirectory(operators)
 add_subdirectory(expressions)

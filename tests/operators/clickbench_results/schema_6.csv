@@ -1,0 +1,2 @@
+MIN(EventDate),date
+MAX(EventDate),date

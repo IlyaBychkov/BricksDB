@@ -3,9 +3,9 @@
 #include <iostream>
 
 int main() {
-    ColumnarToCSVTransformer transformer(
+    ColumnarToCsvTransformer transformer(
         "/home/ilya-bychkov/VsCodeProjects/BricksDB/hits_files/hits_sample.br",
-        "/home/ilya-bychkov/VsCodeProjects/BricksDB/hits_files/hits_scheme_res.csv",
+        "/home/ilya-bychkov/VsCodeProjects/BricksDB/hits_files/hits_schema_res.csv",
         "/home/ilya-bychkov/VsCodeProjects/BricksDB/hits_files/hits_sample_res.csv");
     auto res = transformer.Transform();
     if (!res) {

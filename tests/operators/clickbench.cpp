@@ -14,8 +14,8 @@
 #include "operators/projection_operator.h"
 #include "operators/scan_operator.h"
 #include "operators/sort_operator.h"
-#include "scheme/batch.h"
-#include "scheme/scheme.h"
+#include "schema/batch.h"
+#include "schema/schema.h"
 
 std::string GetPath(const char* env_var, const std::string& default_path) {
     const char* env_val = std::getenv(env_var);
@@ -41,20 +41,20 @@ protected:
 
         if (env_out && !std::string(env_out).empty()) {
             // Режим Docker
-            auto wres = WriteBatchToCSV(*res_batch, env_out);
+            auto wres = WriteBatchToCsv(*res_batch, env_out);
             ASSERT_TRUE(wres.has_value())
                 << "Failed to write batch for query " << query_id << ": " << wres.error();
         } else {
             // Режим ctest: сохраняем каждый запрос в свой файл в локальную папку
             auto batch_path =
                 (local_out_dir / ("query_" + std::to_string(query_id) + ".csv")).string();
-            auto wres = WriteBatchToCSV(*res_batch, batch_path);
+            auto wres = WriteBatchToCsv(*res_batch, batch_path);
             ASSERT_TRUE(wres.has_value()) << "Failed to write batch: " << wres.error();
 
-            auto scheme_path =
-                (local_out_dir / ("scheme_" + std::to_string(query_id) + ".csv")).string();
-            auto sres = WriteSchemeToCSV(res_batch->GetScheme(), scheme_path);
-            ASSERT_TRUE(sres.has_value()) << "Failed to write scheme: " << sres.error();
+            auto schema_path =
+                (local_out_dir / ("schema_" + std::to_string(query_id) + ".csv")).string();
+            auto sres = WriteSchemaToCsv(res_batch->GetSchema(), schema_path);
+            ASSERT_TRUE(sres.has_value()) << "Failed to write schema: " << sres.error();
         }
     }
 

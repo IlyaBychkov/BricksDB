@@ -3,8 +3,8 @@
 #include <memory>
 
 #include "../expressions/cmp_expressions.h"
-#include "../scheme/batch.h"
-#include "../scheme/column.h"
+#include "../schema/batch.h"
+#include "../schema/column.h"
 #include "operators/base_operator.h"
 
 class FilterOperator : public IOperator {

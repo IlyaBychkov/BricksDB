@@ -9,15 +9,15 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     std::string input_csv = argv[1];
-    std::string scheme_csv = argv[2];
+    std::string schema_csv = argv[2];
     std::string output_bricks = argv[3];
     int64_t buffer_size = 1024ll * 1024 * 512;
 
     std::cout << "Starting transformation..." << std::endl;
-    std::cout << "Input: " << input_csv << "\nScheme: " << scheme_csv
+    std::cout << "Input: " << input_csv << "\nSchema: " << schema_csv
               << "\nOutput: " << output_bricks << std::endl;
 
-    CSVToColumnarTransformer transformer(input_csv, scheme_csv, output_bricks, buffer_size);
+    CsvToColumnarTransformer transformer(input_csv, schema_csv, output_bricks, buffer_size);
     auto res = transformer.Transform();
     if (!res) {
         std::cerr << "Transformation failed: " << res.error() << std::endl;

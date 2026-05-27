@@ -4,17 +4,17 @@
 
 #include "time_transform.h"
 
-CSVWriter::CSVWriter(const std::string& filename) : filename_(filename) {
+CsvWriter::CsvWriter(const std::string& filename) : filename_(filename) {
 }
 
-CSVWriter::~CSVWriter() {
+CsvWriter::~CsvWriter() {
     if (fout_.is_open()) {
         Flush();
         fout_.close();
     }
 }
 
-bool CSVWriter::Open() {
+bool CsvWriter::Open() {
     fout_.open(filename_);
     if (!fout_.is_open()) {
         crashed_ = true;
@@ -23,11 +23,11 @@ bool CSVWriter::Open() {
     return true;
 }
 
-bool CSVWriter::IsCrashed() {
+bool CsvWriter::IsCrashed() {
     return crashed_;
 }
 
-bool CSVWriter::Flush() {
+bool CsvWriter::Flush() {
     if (!fout_.is_open()) {
         crashed_ = true;
         return false;
@@ -36,13 +36,13 @@ bool CSVWriter::Flush() {
     return true;
 }
 
-std::expected<void, std::string> CSVWriter::WriteRow(const std::vector<std::string>& fields,
+std::expected<void, std::string> CsvWriter::WriteRow(const std::vector<std::string>& fields,
                                                      bool need_flush) {
     if (!fout_.is_open()) {
         crashed_ = true;
     }
     if (crashed_) {
-        return std::unexpected("CSVWriter::WriteRow: File is not open (" + filename_ + ")");
+        return std::unexpected("CsvWriter::WriteRow: File is not open (" + filename_ + ")");
     }
 
     for (size_t i = 0; i < fields.size(); ++i) {
@@ -92,13 +92,13 @@ std::expected<void, std::string> CSVWriter::WriteRow(const std::vector<std::stri
 
     if (fout_.fail()) {
         crashed_ = true;
-        return std::unexpected("CSVWriter::WriteRow: Writer crashed while writing to " + filename_);
+        return std::unexpected("CsvWriter::WriteRow: Writer crashed while writing to " + filename_);
     }
 
     return {};
 }
 
-std::expected<void, std::string> CSVWriter::WriteBatch(const Batch& batch) {
+std::expected<void, std::string> CsvWriter::WriteBatch(const Batch& batch) {
     for (size_t i = 0; i < batch.RowsCnt(); ++i) {
         std::vector<std::string> row;
         for (size_t c = 0; c < batch.ColumnsCnt(); ++c) {
@@ -122,7 +122,7 @@ std::expected<void, std::string> CSVWriter::WriteBatch(const Batch& batch) {
                 const auto& val = batch.GetColumn(c).GetValue<int32_t>(i);
                 row.push_back(IntToDate(val));
             } else {
-                return std::unexpected(std::string("CSVWriter::WriteBatchToCSV: "
+                return std::unexpected(std::string("CsvWriter::WriteBatchToCsv: "
                                                    "Unsupported column type at column ") +
                                        std::to_string(c));
             }
@@ -130,22 +130,22 @@ std::expected<void, std::string> CSVWriter::WriteBatch(const Batch& batch) {
         auto res = WriteRow(row);
         if (!res) {
             return std::unexpected(
-                std::string("CSVWriter::WriteBatchToCSV: CSVWriter WriteRow failed: ") +
+                std::string("CsvWriter::WriteBatchToCsv: CsvWriter WriteRow failed: ") +
                 res.error());
         }
     }
     if (IsCrashed()) {
         return std::unexpected(
-            std::string("CSVWriter::WriteBatchToCSV: CSVWriter crashed while writing to '") +
+            std::string("CsvWriter::WriteBatchToCsv: CsvWriter crashed while writing to '") +
             filename_ + "'");
     }
     return {};
 }
 
-std::expected<CSVWriter, std::string> CreateCSVWriter(const std::string& csv_filename) {
-    CSVWriter writer(csv_filename);
+std::expected<CsvWriter, std::string> CreateCsvWriter(const std::string& csv_filename) {
+    CsvWriter writer(csv_filename);
     if (!writer.Open()) {
-        return std::unexpected("CreateCSVWriter: Failed to open CSV file for writing: " +
+        return std::unexpected("CreateCsvWriter: Failed to open Csv file for writing: " +
                                csv_filename);
     }
     return writer;

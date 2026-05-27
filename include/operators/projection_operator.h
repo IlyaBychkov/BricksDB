@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "../scheme/batch.h"
+#include "../schema/batch.h"
 #include "operators/base_operator.h"
 
 class ProjectionOperator : public IOperator {

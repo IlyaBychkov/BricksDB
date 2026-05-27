@@ -1,0 +1,5 @@
+SearchPhrase,string
+MIN(URL),string
+MIN(Title),string
+COUNT(*),int64
+COUNT(DISTINCT UserID),int64

@@ -5,18 +5,18 @@
 #include <string>
 #include <vector>
 
-#include "../scheme/batch.h"
+#include "../schema/batch.h"
 
-class CSVWriter {
+class CsvWriter {
 public:
-    CSVWriter() = default;
-    ~CSVWriter();
+    CsvWriter() = default;
+    ~CsvWriter();
 
-    CSVWriter(const CSVWriter&) = delete;
-    CSVWriter operator=(const CSVWriter&) = delete;
+    CsvWriter(const CsvWriter&) = delete;
+    CsvWriter operator=(const CsvWriter&) = delete;
 
-    CSVWriter(CSVWriter&&) = default;
-    CSVWriter& operator=(CSVWriter&&) = default;
+    CsvWriter(CsvWriter&&) = default;
+    CsvWriter& operator=(CsvWriter&&) = default;
 
     bool IsCrashed();
 
@@ -32,11 +32,11 @@ private:
     std::ofstream fout_;
     bool crashed_ = false;
 
-    friend std::expected<CSVWriter, std::string> CreateCSVWriter(const std::string& csv_filename);
+    friend std::expected<CsvWriter, std::string> CreateCsvWriter(const std::string& csv_filename);
 
-    CSVWriter(const std::string& filename);
+    CsvWriter(const std::string& filename);
 
     bool Open();
 };
 
-std::expected<CSVWriter, std::string> CreateCSVWriter(const std::string& csv_filename);
+std::expected<CsvWriter, std::string> CreateCsvWriter(const std::string& csv_filename);

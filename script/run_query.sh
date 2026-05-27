@@ -4,12 +4,12 @@ set -e
 
 QUERY_NUM=$1
 COLUMNAR_FILE=$2
-OUTPUT_CSV=$3
+OUTPUT_Csv=$3
 LOG_FILE=$4
 
 # Экспортируем переменные, чтобы C++ код их увидел через getenv
 export BRICKS_INPUT=$COLUMNAR_FILE
-export BRICKS_OUTPUT=$OUTPUT_CSV
+export BRICKS_OUTPUT=$OUTPUT_Csv
 
 # Путь к бинарнику
 EXECUTABLE="./build/tests/operators/clickbench"

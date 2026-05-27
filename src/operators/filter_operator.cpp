@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "scheme/batch.h"
-#include "scheme/column.h"
+#include "schema/batch.h"
+#include "schema/column.h"
 
 FilterOperator::FilterOperator(std::unique_ptr<IOperator> child,
                                std::unique_ptr<BoolExpression> expr)
@@ -31,10 +31,10 @@ Column ApplyMaskToColumn(const Column &column, const std::vector<bool> &mask) {
 }
 
 std::optional<Batch> FilterOperator::Next() {
-    std::optional<Scheme> saved_scheme;
+    std::optional<Schema> saved_schema;
     while (auto batch_opt = child_->Next()) {
-        if (!saved_scheme) {
-            saved_scheme = batch_opt->GetScheme();
+        if (!saved_schema) {
+            saved_schema = batch_opt->GetSchema();
         }
 
         Batch batch = std::move(*batch_opt);
@@ -49,16 +49,16 @@ std::optional<Batch> FilterOperator::Next() {
             filtered.emplace_back(ApplyMaskToColumn(batch.GetColumn(i), mask));
         }
 
-        return Batch(std::move(filtered), batch.GetScheme());
+        return Batch(std::move(filtered), batch.GetSchema());
     }
 
-    if (saved_scheme) {
+    if (saved_schema) {
         std::vector<Column> empty_columns;
-        for (size_t i = 0; i < saved_scheme->GetSize(); ++i) {
-            empty_columns.emplace_back(saved_scheme->GetType(i));
+        for (size_t i = 0; i < saved_schema->GetSize(); ++i) {
+            empty_columns.emplace_back(saved_schema->GetType(i));
         }
 
-        return Batch(std::move(empty_columns), std::move(*saved_scheme));
+        return Batch(std::move(empty_columns), std::move(*saved_schema));
     }
     return std::nullopt;
 }

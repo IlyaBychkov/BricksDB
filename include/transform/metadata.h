@@ -3,23 +3,23 @@
 #include <istream>
 #include <ostream>
 
-#include "scheme/scheme.h"
+#include "schema/schema.h"
 struct Metadata {
 public:
     Metadata() = default;
-    Metadata(const Scheme& scheme) : scheme_(scheme) {
+    Metadata(const Schema& schema) : schema_(schema) {
     }
 
     void AddRowGroup(int64_t offset, int64_t rows);
 
-    Scheme& GetScheme();
+    Schema& GetSchema();
     std::vector<int64_t>& GetOffsets();
     std::vector<int64_t>& GetRowsCnt();
 
     size_t BatchesCnt() const;
 
 private:
-    Scheme scheme_;
+    Schema schema_;
     std::vector<int64_t> offsets_;
     std::vector<int64_t> rows_;
 };

@@ -3,33 +3,34 @@
 #include <cstdint>
 #include <expected>
 
-#include "../scheme/batch.h"
-#include "../scheme/scheme.h"
+#include "../schema/batch.h"
+#include "../schema/schema.h"
 #include "csv_reader.h"
 
-struct CSVBatcher {
+struct CsvBatcher {
 public:
-    CSVBatcher() = default;
-    CSVBatcher(Scheme&& scheme, CSVReader&& reader, int64_t batch_max_size);
+    CsvBatcher() = default;
+    CsvBatcher(Schema&& schema, CsvReader&& reader, int64_t max_batch_size_bytes);
 
-    CSVBatcher(const CSVBatcher&) = delete;
-    CSVBatcher operator=(const CSVBatcher&) = delete;
+    CsvBatcher(const CsvBatcher&) = delete;
+    CsvBatcher operator=(const CsvBatcher&) = delete;
 
-    CSVBatcher(CSVBatcher&&) = default;
-    CSVBatcher& operator=(CSVBatcher&&) = default;
+    CsvBatcher(CsvBatcher&&) = default;
+    CsvBatcher& operator=(CsvBatcher&&) = default;
 
     bool IsCrashed();
     bool HasNextBatch();
     std::expected<Batch, std::string> NextBatch();
 
-    const Scheme& GetScheme();
+    const Schema& GetSchema();
 
 private:
-    Scheme scheme_;
-    CSVReader reader_;
-    int64_t batch_max_size_;  // in bytes
+    Schema schema_;
+    CsvReader reader_;
+    int64_t max_batch_size_bytes_;  // in bytes
 };
 
-std::expected<CSVBatcher, std::string> CreateCSVBatcher(const std::string& csv_file,
-                                                        const std::string& scheme_file,
-                                                        int64_t batch_max_size = 1024 * 1024 * 512);
+std::expected<CsvBatcher, std::string> CreateCsvBatcher(const std::string& csv_file,
+                                                        const std::string& schema_file,
+                                                        int64_t max_batch_size_bytes = 1024 * 1024 *
+                                                                                       512);

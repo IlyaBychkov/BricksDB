@@ -1,62 +1,63 @@
 #include "csv/csv_batcher.h"
 
-#include <chrono>
 #include <ctime>
 #include <expected>
 
 #include "csv/time_transform.h"
 
-std::expected<CSVBatcher, std::string> CreateCSVBatcher(const std::string& csv_filename,
-                                                        const std::string& scheme_file,
-                                                        int64_t batch_max_size) {
-    auto reader = CreateCSVReader(csv_filename);
+std::expected<CsvBatcher, std::string> CreateCsvBatcher(const std::string& csv_filename,
+                                                        const std::string& schema_file,
+                                                        int64_t max_batch_size_bytes) {
+    auto reader = CreateCsvReader(csv_filename);
     if (!reader.has_value()) {
-        return std::unexpected("CreateCSVBatcher: CreateCSVReader failed for '" + csv_filename +
+        return std::unexpected("CreateCsvBatcher: CreateCsvReader failed for '" + csv_filename +
                                "': " + reader.error());
     }
-    auto scheme = CreateSchemeFromCSV(scheme_file);
-    if (!scheme.has_value()) {
-        return std::unexpected("CreateCSVBatcher: CreateSchemeFromFile failed for '" + scheme_file +
-                               "': " + scheme.error());
+    auto schema = CreateSchemaFromCsv(schema_file);
+    if (!schema.has_value()) {
+        return std::unexpected("CreateCsvBatcher: CreateSchemaFromFile failed for '" + schema_file +
+                               "': " + schema.error());
     }
-    return CSVBatcher(std::move(*scheme), std::move(*reader), batch_max_size);
+    return CsvBatcher(std::move(*schema), std::move(*reader), max_batch_size_bytes);
 }
 
-CSVBatcher::CSVBatcher(Scheme&& scheme, CSVReader&& reader, int64_t batch_max_size)
-    : scheme_(std::move(scheme)), reader_(std::move(reader)), batch_max_size_(batch_max_size) {
+CsvBatcher::CsvBatcher(Schema&& schema, CsvReader&& reader, int64_t max_batch_size_bytes)
+    : schema_(std::move(schema)),
+      reader_(std::move(reader)),
+      max_batch_size_bytes_(max_batch_size_bytes) {
 }
 
-bool CSVBatcher::IsCrashed() {
+bool CsvBatcher::IsCrashed() {
     return reader_.IsCrashed();
 }
 
-bool CSVBatcher::HasNextBatch() {
+bool CsvBatcher::HasNextBatch() {
     return reader_.HasNext();
 }
 
-std::expected<Batch, std::string> CSVBatcher::NextBatch() {
+std::expected<Batch, std::string> CsvBatcher::NextBatch() {
     std::vector<Column> columns;
-    for (size_t i = 0; i < scheme_.GetSize(); ++i) {
-        columns.emplace_back(scheme_.GetType(i));
+    for (size_t i = 0; i < schema_.GetSize(); ++i) {
+        columns.emplace_back(schema_.GetType(i));
     }
 
     int64_t current_batch_size = 0;
-    while (reader_.HasNext() && current_batch_size < batch_max_size_) {
+    while (reader_.HasNext() && current_batch_size < max_batch_size_bytes_) {
 
         auto tmp = reader_.NextStr();
         if (!tmp.has_value()) {
             return std::unexpected(
-                std::string("CSVBatcher::NextBatch: CSVReader NextStr failed: ") + tmp.error());
+                std::string("CsvBatcher::NextBatch: CsvReader NextStr failed: ") + tmp.error());
         }
         auto row = tmp.value();
         if (row.size() != columns.size()) {
-            return std::unexpected("CSVBatcher::NextBatch: Bad scheme or CSV: expected " +
+            return std::unexpected("CsvBatcher::NextBatch: Bad schema or Csv: expected " +
                                    std::to_string(columns.size()) + " columns, got " +
                                    std::to_string(row.size()));
         }
 
         for (size_t i = 0; i < columns.size(); ++i) {
-            Type t = scheme_.GetType(i);
+            Type t = schema_.GetType(i);
             if (t == Type::int64) {
                 columns[i].Push<int64_t>(std::stoll(row[i]));
                 current_batch_size += sizeof(int64_t);
@@ -72,32 +73,32 @@ std::expected<Batch, std::string> CSVBatcher::NextBatch() {
             } else if (t == Type::timestamp) {
                 auto ts = TimestampToInt(row[i]);
                 if (!ts.has_value()) {
-                    return std::unexpected("CSVBatcher::NextBatch: " + ts.error());
+                    return std::unexpected("CsvBatcher::NextBatch: " + ts.error());
                 }
                 columns[i].Push<int64_t>(ts.value());
                 current_batch_size += sizeof(int64_t);
             } else if (t == Type::date) {
                 auto dt = DateToInt(row[i]);
                 if (!dt.has_value()) {
-                    return std::unexpected("CSVBatcher::NextBatch: " + dt.error());
+                    return std::unexpected("CsvBatcher::NextBatch: " + dt.error());
                 }
                 columns[i].Push<int32_t>(dt.value());
                 current_batch_size += sizeof(int32_t);
             } else {
                 return std::unexpected(
-                    std::string("CSVBatcher::NextBatch: Unsupported type at column ") +
+                    std::string("CsvBatcher::NextBatch: Unsupported type at column ") +
                     std::to_string(i));
             }
         }
     }
 
     if (reader_.IsCrashed()) {
-        return std::unexpected("CSVBatcher::NextBatch: underlying CSVReader crashed");
+        return std::unexpected("CsvBatcher::NextBatch: underlying CsvReader crashed");
     }
 
-    return Batch(std::move(columns), scheme_);
+    return Batch(std::move(columns), schema_);
 }
 
-const Scheme& CSVBatcher::GetScheme() {
-    return scheme_;
+const Schema& CsvBatcher::GetSchema() {
+    return schema_;
 }
